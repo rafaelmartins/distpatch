@@ -20,30 +20,6 @@ class Package:
         for cpv in dbapi.match(atom):
             self.ebuilds[cpv] = Ebuild(cpv)
         self._lineage_identification()
-
-    def _lineage_identification_forward(self):
-        self.diffs = []
-        for ebuild_id in range(len(self.ebuilds) - 1):
-            cpvs = self.ebuilds.keys()
-            src_cpv = cpvs[ebuild_id]
-            dest_cpv = cpvs[ebuild_id + 1]
-            src_ebuild = self.ebuilds[src_cpv]
-            dest_ebuild = self.ebuilds[dest_cpv]
-            for src_distfile in src_ebuild.src_uri_map.keys():
-                prefix_max = None
-                prefix_maxlen = 0
-                for dest_distfile in dest_ebuild.src_uri_map.keys():
-                    prefix = ''
-                    for i in range(min(len(src_distfile), len(dest_distfile))):
-                        if src_distfile[i] == dest_distfile[i]:
-                            prefix += src_distfile[i]
-                        else:
-                            break
-                    if len(prefix) > prefix_maxlen:
-                        prefix_max = dest_distfile
-                        prefix_maxlen = len(prefix)
-                if prefix_max is not None and src_distfile != prefix_max:
-                    self.diffs.append(Diff(src_distfile, src_ebuild, dest_distfile, dest_ebuild))
     
     def _lineage_identification(self):
         self.diffs = []
@@ -85,7 +61,8 @@ class Package:
                         avg_ebuild = dest_ebuild
                         max_avg = avg
                 if avg_distfile is not None and src_distfile != avg_distfile:
-                    diffs.append((max_avg, Diff(src_distfile, src_ebuild, avg_distfile, dest_ebuild)))
+                    diffs.append((max_avg, Diff(src_distfile, src_ebuild,
+                                                avg_distfile, avg_ebuild)))
         for avg, diff in diffs:
             if diff.dest_distfile in taken:
                 if taken[diff.dest_distfile][0] > avg:
