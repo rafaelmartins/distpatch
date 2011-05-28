@@ -18,14 +18,14 @@ class Diff:
     patch_format = 'switching'
     
     def __init__(self, src_distfile, src_ebuild, dest_distfile, dest_ebuild):
-        self._src_distfile = src_distfile
-        self._src_ebuild = src_ebuild
-        self._dest_distfile = dest_distfile
-        self._dest_ebuild = dest_ebuild
+        self.src_distfile = src_distfile
+        self.src_ebuild = src_ebuild
+        self.dest_distfile = dest_distfile
+        self.dest_ebuild = dest_ebuild
     
     def fetch_distfiles(self):
-        self._src_ebuild.fetch(self._src_distfile)
-        self._dest_ebuild.fetch(self._dest_distfile)
+        self.src_ebuild.fetch(self.src_distfile)
+        self.dest_ebuild.fetch(self.dest_distfile)
     
     def _copy_and_unpack(self, myfile, output_dir):
         distdir = portage.settings['DISTDIR']
@@ -56,11 +56,11 @@ class Diff:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        src = self._copy_and_unpack(self._src_distfile, output_dir)
-        dest = self._copy_and_unpack(self._dest_distfile, output_dir)
+        src = self._copy_and_unpack(self.src_distfile, output_dir)
+        dest = self._copy_and_unpack(self.dest_distfile, output_dir)
         self.diff_file = os.path.join(output_dir,
-                                      '%s-%s.%s' % (self._src_distfile,
-                                                    self._dest_distfile,
+                                      '%s-%s.%s' % (self.src_distfile,
+                                                    self.dest_distfile,
                                                     self.patch_format))
         
         cmd = [differ, src, dest, '--patch-format', self.patch_format,
@@ -82,5 +82,5 @@ class Diff:
         
     
     def __repr__(self):
-        return '<%s %s -> %s>' % (self.__class__.__name__, self._src_distfile,
-                                  self._dest_distfile)
+        return '<%s %s -> %s>' % (self.__class__.__name__, self.src_distfile,
+                                  self.dest_distfile)

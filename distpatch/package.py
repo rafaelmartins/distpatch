@@ -47,6 +47,8 @@ class Package:
     
     def _lineage_identification(self):
         self.diffs = []
+        diffs = []
+        taken = {}
         for ebuild_id in range(len(self.ebuilds) - 1):
             cpvs = self.ebuilds.keys()
             src_cpv = cpvs[ebuild_id]
@@ -82,16 +84,21 @@ class Package:
                         avg_distfile = dest_distfile
                         avg_ebuild = dest_ebuild
                         max_avg = avg
-                print src_distfile, avg_distfile
                 if avg_distfile is not None and src_distfile != avg_distfile:
-                    self.diffs.append(Diff(src_distfile, src_ebuild, avg_distfile, dest_ebuild))
+                    diffs.append((max_avg, Diff(src_distfile, src_ebuild, avg_distfile, dest_ebuild)))
+        for avg, diff in diffs:
+            if diff.dest_distfile in taken:
+                if taken[diff.dest_distfile][0] > avg:
+                    continue
+            self.diffs.append(diff)
+            taken[diff.dest_distfile] = (avg, diff)
     
     def fetch_distfiles(self):
         for diff in self.diffs:
             diff.fetch_distfiles()
 
 if __name__ == '__main__':
-    a = Package('gtkwave')
+    a = Package('gentoo-sources')
     #a.fetch_distfiles()
     for diff in a.diffs:
         print diff
