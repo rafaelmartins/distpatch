@@ -47,7 +47,7 @@ class Diff:
             return dest + '.tar'
         return dest
     
-    def generate(self, output_dir):
+    def generate(self, output_dir, clean_sources=True, compress=True):
         # running diffball from a git repository, while a version with xz support
         # isn't released :)
         diffball_bindir = os.environ.get('DIFFBALL_BINDIR', '/usr/bin')
@@ -72,13 +72,15 @@ class Diff:
         # validate
         
         # remove sources
-        #os.unlink(src)
-        #os.unlink(dest)
+        if clean_sources:
+            os.unlink(src)
+            os.unlink(dest)
         
         # xz it
-        #if call(['xz', self.diff_file]) != os.EX_OK:
-        #    raise DiffException('Failed to xz diff: %s' % self.diff_file)
-        #self.diff_file += '.xz'
+        if compress:
+            if call(['xz', self.diff_file]) != os.EX_OK:
+                raise DiffException('Failed to xz diff: %s' % self.diff_file)
+            self.diff_file += '.xz'
         
     
     def __repr__(self):

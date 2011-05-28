@@ -67,6 +67,12 @@ class Package:
             if diff.dest_distfile in taken:
                 if taken[diff.dest_distfile][0] > avg:
                     continue
+                else:
+                    tmp_diffs = []
+                    for tmp_diff in self.diffs:
+                        if tmp_diff.dest_distfile != diff.dest_distfile:
+                            tmp_diffs.append(tmp_diff)
+                    self.diffs = tmp_diffs
             self.diffs.append(diff)
             taken[diff.dest_distfile] = (avg, diff)
     
@@ -75,7 +81,7 @@ class Package:
             diff.fetch_distfiles()
 
 if __name__ == '__main__':
-    a = Package('gentoo-sources')
+    a = Package('eagle')
     #a.fetch_distfiles()
     for diff in a.diffs:
         print diff
