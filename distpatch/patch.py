@@ -55,7 +55,7 @@ class Patch:
             current_src = rd['dest']
         self.patch_format = current_format
 
-    def reconstruct(self, output_dir):
+    def reconstruct(self, output_dir, compress=True):
         diffball_bindir = os.environ.get('DIFFBALL_BINDIR', '/usr/bin')
         patcher = os.path.join(diffball_bindir, 'patcher')
         
@@ -76,3 +76,6 @@ class Patch:
         
         if call(cmd) != os.EX_OK:
             raise PatchException('Failed to reconstruct file: %s' % dest)
+
+        if compress and call([compressor, dest]) != os.EX_OK:
+            raise PatchException('Failed to compress reconstructed file: %s' % dest)
