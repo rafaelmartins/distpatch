@@ -67,10 +67,16 @@ def main():
             for cpv in pkg.ebuilds:
                 print '        %s' % cpv
             print '    >>> Deltas:'
-            for diff in pkg.diffs:
-                print '        %s -> %s' % (diff.src_distfile, diff.dest_distfile)
+            if len(pkg.diffs) == 0:
+                print '        None'
+                print
+            else:
+                for diff in pkg.diffs:
+                    print '        %s -> %s' % (diff.src_distfile, diff.dest_distfile)
+        if len(pkg.diffs) == 0:
+            continue
         if args.verbose:
-            print '    >>> Fetching distfiles'
+            print '    >>> Fetching distfiles:'
         for diff in pkg.diffs:
             diff.fetch_distfiles()
         if args.verbose:
