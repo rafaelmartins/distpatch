@@ -63,7 +63,7 @@ class Diff:
         # validate
         patch = Patch(output_dir, self.src_distfile, self.dest_distfile, src)
         tmpdir = mkdtemp()
-        patch.reconstruct(tmpdir)
+        patch.reconstruct(tmpdir, False)
         with open(dest, 'rb') as fp:
             cksm_dest = md5(fp.read()).hexdigest()
         with open(os.path.join(tmpdir, os.path.basename(dest)), 'rb') as fp:
