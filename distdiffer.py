@@ -31,6 +31,8 @@ parser.add_argument('-c', '--no-compress', dest='no_compress', action='store_tru
                     help='Disable the compression of generated deltas with xz(1)')
 parser.add_argument('-p', '--preserve', dest='preserve', action='store_true',
                     help='Preserve the uncompressed sources in the output directory')
+parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                    help='Enable verbose mode')
 
 def main():
     args = parser.parse_args()
@@ -51,11 +53,45 @@ def main():
 
     if len(packages) == 0:
         parser.print_help()
+        return
+
+    if args.verbose:
+        print '>>> Starting distdiffer ...\n'
 
     for package in packages:
+        if args.verbose:
+            print '>>> Package: %s' %  package
         pkg = Package(package)
+        if args.verbose:
+            print '    >>> Versions:'
+            for cpv in pkg.ebuilds:
+                print '        %s' % cpv
+            print '    >>> Deltas:'
+            for diff in pkg.diffs:
+                print '        %s -> %s' % (diff.src_distfile, diff.dest_distfile)
+        if args.verbose:
+            print '    >>> Fetching distfiles'
         for diff in pkg.diffs:
-            diff.generate(args.output_dir, not args.preserve, not args.no_compress)
+            diff.fetch_distfiles()
+        if args.verbose:
+            print '    >>> Generating deltas:'
+        for diff in pkg.diffs:
+            if args.verbose:
+                sys.stdout.write('        %s -> %s ... ' % (diff.src_distfile,
+                                                            diff.dest_distfile))
+                sys.stdout.flush()
+            try:
+                diff.generate(args.output_dir, not args.preserve,
+                              not args.no_compress)
+            except DiffException, err:
+                if args.verbose:
+                    print 'failed!'
+                    print '            %s' % str(err)
+            else:
+                if args.verbose:
+                    print 'done!'
+                    print '            %s' % os.path.basename(diff.diff_file)
+        print
 
 if __name__ == '__main__':
     main()

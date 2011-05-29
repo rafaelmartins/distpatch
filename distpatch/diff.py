@@ -8,12 +8,16 @@ from tempfile import mkdtemp
 from helpers import uncompressed_filename_and_compressor
 from patch import Patch
 
+import atexit
 import os
 import portage
 
 class DiffException(Exception):
     pass
 
+def remove_tmpdir(tmpdir):
+    if os.path.isdir(tmpdir):
+        rmtree(tmpdir)
 
 class Diff:
     
@@ -60,13 +64,18 @@ class Diff:
         if call(cmd) != os.EX_OK:
             raise DiffException('Failed to generate diff: %s' % self.diff_file)
         
-        # validate
-        patch = Patch(output_dir, self.src_distfile, self.dest_distfile, src)
+        # validation of delta
         tmpdir = mkdtemp()
+        atexit.register(remove_tmpdir, tmpdir)
+        tmpsrc = os.path.join(tmpdir, os.path.basename(src))
+        tmpdest = os.path.join(tmpdir, os.path.basename(dest))
+        copy2(src, tmpdir)
+        copy2(self.diff_file, tmpdir)
+        patch = Patch(tmpdir, self.src_distfile, self.dest_distfile, tmpsrc)
         patch.reconstruct(tmpdir, False)
-        with open(dest, 'rb') as fp:
+        with open(dest, 'rb') as fp: # unpacked original distfile
             cksm_dest = md5(fp.read()).hexdigest()
-        with open(os.path.join(tmpdir, os.path.basename(dest)), 'rb') as fp:
+        with open(tmpdest, 'rb') as fp: # regenerated tarball
             cksm_rec = md5(fp.read()).hexdigest()
         rmtree(tmpdir)
         if cksm_dest != cksm_rec:
@@ -79,7 +88,7 @@ class Diff:
         
         # xz it
         if compress:
-            if call(['xz', self.diff_file]) != os.EX_OK:
+            if call(['xz', '-f', self.diff_file]) != os.EX_OK:
                 raise DiffException('Failed to xz diff: %s' % self.diff_file)
             self.diff_file += '.xz'
     
