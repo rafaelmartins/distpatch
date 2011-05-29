@@ -77,5 +77,5 @@ class Patch:
         if call(cmd) != os.EX_OK:
             raise PatchException('Failed to reconstruct file: %s' % dest)
 
-        if compress and call([compressor, dest]) != os.EX_OK:
+        if compress and compressor is not None and call([compressor, dest]) != os.EX_OK:
             raise PatchException('Failed to compress reconstructed file: %s' % dest)
