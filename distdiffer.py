@@ -48,10 +48,10 @@ def main():
         with open(args.packages_file) as fp:
             for line in fp:
                 packages.append(line.strip())
-    
+
     if len(packages) == 0:
         parser.print_help()
-    
+
     for package in packages:
         pkg = Package(package)
         for diff in pkg.diffs:
