@@ -91,7 +91,8 @@ def main():
                 if args.verbose:
                     print 'done!'
                     print '            %s' % os.path.basename(diff.diff_file)
-        print
+        if args.verbose:
+            print
 
 if __name__ == '__main__':
     main()
