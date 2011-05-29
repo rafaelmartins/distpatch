@@ -52,8 +52,3 @@ class Ebuild:
     
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.cpv)
-
-
-if __name__ == '__main__':
-    a = Ebuild('sci-electronics/kicad-20090320.1666-r2')
-    a.fetch()

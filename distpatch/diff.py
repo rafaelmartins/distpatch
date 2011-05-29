@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from shutil import copy2
+from hashlib import md5
+from shutil import copy2, rmtree
 from subprocess import call
+from tempfile import mkdtemp
+
+from helpers import uncompressed_filename_and_compressor
+from patch import Patch
 
 import os
 import portage
-
-out = portage.output.EOutput()
-
 
 class DiffException(Exception):
     pass
@@ -31,20 +33,9 @@ class Diff:
         distdir = portage.settings['DISTDIR']
         copy2(os.path.join(distdir, myfile), output_dir)
         tarball = os.path.join(output_dir, myfile)
-        dest, ext = os.path.splitext(tarball)
-        program = None
-        if ext in ('.gz', '.tgz'):
-            program = 'gzip'
-        elif ext in ('.bz2', '.tbz2'):
-            program = 'bzip2'
-        elif ext == '.xz':
-            program = 'xz'
-        elif ext == '.lzma':
-            program = 'lzma'
+        dest, program = uncompressed_filename_and_compressor(tarball)
         if program is not None and call([program, '-fd', tarball]) != os.EX_OK:
             raise DiffException('Failed to unpack file: %s' % tarball)
-        if ext in ('.tgz', '.tbz2'):
-            return dest + '.tar'
         return dest
     
     def generate(self, output_dir, clean_sources=True, compress=True):
@@ -70,6 +61,16 @@ class Diff:
             raise DiffException('Failed to generate diff: %s' % self.diff_file)
         
         # validate
+        patch = Patch(output_dir, self.src_distfile, self.dest_distfile, src)
+        tmpdir = mkdtemp()
+        patch.reconstruct(tmpdir)
+        with open(dest, 'rb') as fp:
+            cksm_dest = md5(fp.read()).hexdigest()
+        with open(os.path.join(tmpdir, os.path.basename(dest)), 'rb') as fp:
+            cksm_rec = md5(fp.read()).hexdigest()
+        rmtree(tmpdir)
+        if cksm_dest != cksm_rec:
+            raise DiffException('Bad delta! :(')
         
         # remove sources
         if clean_sources:
@@ -81,7 +82,6 @@ class Diff:
             if call(['xz', self.diff_file]) != os.EX_OK:
                 raise DiffException('Failed to xz diff: %s' % self.diff_file)
             self.diff_file += '.xz'
-        
     
     def __repr__(self):
         return '<%s %s -> %s>' % (self.__class__.__name__, self.src_distfile,

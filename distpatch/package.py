@@ -79,11 +79,3 @@ class Package:
     def fetch_distfiles(self):
         for diff in self.diffs:
             diff.fetch_distfiles()
-
-if __name__ == '__main__':
-    a = Package('eagle')
-    #a.fetch_distfiles()
-    for diff in a.diffs:
-        print diff
-        #diff.generate('nginx')
-    
