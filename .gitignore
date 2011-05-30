@@ -1,2 +1,5 @@
 *.pyc
 *.pyo
+
+# Wing IDE project file
+*.wpr
