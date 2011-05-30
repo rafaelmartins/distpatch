@@ -15,6 +15,8 @@ def uncompressed_filename_and_compressor(tarball):
         compressor = 'xz'
     elif ext == '.lzma':
         compressor = 'lzma'
+    else:
+        dest += ext
     if ext in ('.tgz', '.tbz2'):
         return dest + '.tar', compressor
     return dest, compressor
