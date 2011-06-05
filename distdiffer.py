@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from distpatch.deltadb import DeltaDB
 from distpatch.diff import DiffException
 from distpatch.ebuild import EbuildException
 from distpatch.package import Package, PackageException
@@ -18,6 +19,8 @@ parser.add_argument('packages', metavar='package-atom', nargs='*',
                     help='Package atoms')
 
 # optional arguments
+parser.add_argument('-d', '--db', dest='delta_db', metavar='FILE',
+                    required=True, help='File to be used as delta database')
 parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
                     default=os.getcwd(), help='Output directory (default: ' \
                     'current directory)')
@@ -36,7 +39,9 @@ parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 
 def main():
     args = parser.parse_args()
-
+    
+    db = DeltaDB(args.delta_db)
+    
     # get the list of packages to be processed
     packages = args.packages[:]
     if args.stdin:
@@ -97,6 +102,7 @@ def main():
                 if args.verbose:
                     print 'done!'
                     print '            %s' % os.path.basename(diff.diff_file)
+                db.add(diff.dbrecord)
         if args.verbose:
             print
 

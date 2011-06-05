@@ -6,6 +6,7 @@ from subprocess import call
 from tempfile import mkdtemp
 
 from helpers import uncompressed_filename_and_compressor
+from deltadb import DeltaDBFile, DeltaDBRecord
 from patch import Patch
 
 import atexit
@@ -35,12 +36,13 @@ class Diff:
     
     def _copy_and_unpack(self, myfile, output_dir):
         distdir = portage.settings['DISTDIR']
-        copy2(os.path.join(distdir, myfile), output_dir)
+        dest = os.path.join(distdir, myfile)
+        copy2(dest, output_dir)
         tarball = os.path.join(output_dir, myfile)
-        dest, program = uncompressed_filename_and_compressor(tarball)
+        udest, program = uncompressed_filename_and_compressor(tarball)
         if program is not None and call([program, '-fd', tarball]) != os.EX_OK:
             raise DiffException('Failed to unpack file: %s' % tarball)
-        return dest
+        return udest, dest
     
     def generate(self, output_dir, clean_sources=True, compress=True):
         # running diffball from a git repository, while a version with xz support
@@ -51,14 +53,15 @@ class Diff:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        src = self._copy_and_unpack(self.src_distfile, output_dir)
-        dest = self._copy_and_unpack(self.dest_distfile, output_dir)
+        usrc, src = self._copy_and_unpack(self.src_distfile, output_dir)
+        udest, dest = self._copy_and_unpack(self.dest_distfile, output_dir)
+        
         self.diff_file = os.path.join(output_dir,
                                       '%s-%s.%s' % (self.src_distfile,
                                                     self.dest_distfile,
                                                     self.patch_format))
         
-        cmd = [differ, src, dest, '--patch-format', self.patch_format,
+        cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
                self.diff_file]
         
         if call(cmd) != os.EX_OK:
@@ -67,30 +70,37 @@ class Diff:
         # validation of delta
         tmpdir = mkdtemp()
         atexit.register(remove_tmpdir, tmpdir)
-        tmpsrc = os.path.join(tmpdir, os.path.basename(src))
-        tmpdest = os.path.join(tmpdir, os.path.basename(dest))
-        copy2(src, tmpdir)
+        tmpsrc = os.path.join(tmpdir, os.path.basename(usrc))
+        tmpdest = os.path.join(tmpdir, os.path.basename(udest))
+        copy2(usrc, tmpdir)
         copy2(self.diff_file, tmpdir)
         patch = Patch(tmpdir, self.src_distfile, self.dest_distfile, tmpsrc)
         patch.reconstruct(tmpdir, False)
-        with open(dest, 'rb') as fp: # unpacked original distfile
-            cksm_dest = md5(fp.read()).hexdigest()
-        with open(tmpdest, 'rb') as fp: # regenerated tarball
-            cksm_rec = md5(fp.read()).hexdigest()
-        rmtree(tmpdir)
-        if cksm_dest != cksm_rec:
+        
+        if DeltaDBFile(udest) != DeltaDBFile(tmpdest):
             raise DiffException('Bad delta! :(')
         
-        # remove sources
-        if clean_sources:
-            os.unlink(src)
-            os.unlink(dest)
+        tmpdir2 = mkdtemp()
+        atexit.register(remove_tmpdir, tmpdir2)
+        tmp_diff_file = os.path.join(tmpdir2, os.path.basename(self.diff_file))
+        copy2(self.diff_file, tmp_diff_file)
         
         # xz it
         if compress:
             if call(['xz', '-f', self.diff_file]) != os.EX_OK:
                 raise DiffException('Failed to xz diff: %s' % self.diff_file)
             self.diff_file += '.xz'
+        
+        self.dbrecord = DeltaDBRecord(DeltaDBFile(self.diff_file, tmp_diff_file),
+                                      DeltaDBFile(src, usrc),
+                                      DeltaDBFile(dest, udest))
+        
+        # remove sources
+        rmtree(tmpdir2)
+        rmtree(tmpdir)
+        if clean_sources:
+            os.unlink(usrc)
+            os.unlink(udest)
     
     def __repr__(self):
         return '<%s %s -> %s>' % (self.__class__.__name__, self.src_distfile,
