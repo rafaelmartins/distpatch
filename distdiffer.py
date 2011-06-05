@@ -39,9 +39,8 @@ parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 
 def main():
     args = parser.parse_args()
-    
     db = DeltaDB(args.delta_db)
-    
+
     # get the list of packages to be processed
     packages = args.packages[:]
     if args.stdin:

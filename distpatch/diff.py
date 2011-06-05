@@ -55,7 +55,7 @@ class Diff:
         
         usrc, src = self._copy_and_unpack(self.src_distfile, output_dir)
         udest, dest = self._copy_and_unpack(self.dest_distfile, output_dir)
-        
+
         self.diff_file = os.path.join(output_dir,
                                       '%s-%s.%s' % (self.src_distfile,
                                                     self.dest_distfile,
@@ -76,7 +76,7 @@ class Diff:
         copy2(self.diff_file, tmpdir)
         patch = Patch(tmpdir, self.src_distfile, self.dest_distfile, tmpsrc)
         patch.reconstruct(tmpdir, False)
-        
+
         if DeltaDBFile(udest) != DeltaDBFile(tmpdest):
             raise DiffException('Bad delta! :(')
         
@@ -90,11 +90,11 @@ class Diff:
             if call(['xz', '-f', self.diff_file]) != os.EX_OK:
                 raise DiffException('Failed to xz diff: %s' % self.diff_file)
             self.diff_file += '.xz'
-        
+
         self.dbrecord = DeltaDBRecord(DeltaDBFile(self.diff_file, tmp_diff_file),
                                       DeltaDBFile(src, usrc),
                                       DeltaDBFile(dest, udest))
-        
+
         # remove sources
         rmtree(tmpdir2)
         rmtree(tmpdir)
