@@ -91,9 +91,12 @@ class Diff:
                 raise DiffException('Failed to xz diff: %s' % self.diff_file)
             self.diff_file += '.xz'
 
-        self.dbrecord = DeltaDBRecord(DeltaDBFile(self.diff_file, tmp_diff_file),
-                                      DeltaDBFile(src, usrc),
-                                      DeltaDBFile(dest, udest))
+        self.dbrecord = DeltaDBRecord(DeltaDBFile(src),
+                                      DeltaDBFile(usrc),
+                                      DeltaDBFile(dest),
+                                      DeltaDBFile(udest),
+                                      DeltaDBFile(self.diff_file),
+                                      DeltaDBFile(tmp_diff_file))
 
         # remove sources
         rmtree(tmpdir2)

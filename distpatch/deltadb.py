@@ -16,7 +16,8 @@
 
 '''
 
-from itertools import izip, izip_longest
+from collections import OrderedDict
+from itertools import izip
 from snakeoil.chksum import get_chksums, get_handler
 from snakeoil.fileutils import AtomicWriteFile
 
@@ -32,45 +33,21 @@ class DeltaDBFile:
 
     chksum_types = ['md5', 'sha1', 'sha256', 'rmd160', 'size']
 
-    def __init__(self, fname, ufname=None, chksums=None):
+    def __init__(self, fname, chksums=None):
         self.fname = fname
-        self.ufname = ufname
         self.chksums = chksums
-        self.compressed = True
-        if ufname is not None and \
-           (os.path.basename(self.fname) == os.path.basename(self.ufname)):
-            self.compressed = False
         if self.chksums is None:
             chksums = get_chksums(self.fname, *self.chksum_types)
-            uchksums = []
-            if self.compressed and self.ufname is not None:
-                uchksums = get_chksums(self.ufname, *self.chksum_types)
-            self.chksums = []
-            for chksum_type, chksum, uchksum in izip_longest(self.chksum_types,
-                                                             chksums, uchksums,
-                                                             fillvalue=None):
-                if chksum_type != 'size':
-                    handler = get_handler(chksum_type)
-                    self.chksums.append((chksum_type, handler.long2str(chksum)))
-                    if self.compressed and uchksum is not None:
-                        self.chksums.append(('u'+ chksum_type,
-                                            handler.long2str(uchksum)))
-                else:
-                    self.chksums.append(('size', chksum))
-                    if self.compressed and uchksum is not None:
-                        self.chksums.append(('usize', uchksum))
+            self.chksums = OrderedDict()
+            for chksum_type, chksum in zip(self.chksum_types, chksums):
+                self.chksums[chksum_type] = chksum
 
     def __eq__(self, other):
-        for i in range(len(self.chksum_types)):
+        for checksum_type in self.chksum_types:
             try:
-                if self.chksums[i] != other.chksums[i]:
+                if self.chksums[checksum_type] != other.chksums[checksum_type]:
                     return False
-                try:
-                    if self.compressed and (self.uchksums[i] != other.uchksums[i]):
-                        return False
-                except AttributeError:
-                    pass
-            except IndexError:
+            except KeyError:
                 pass
         return True
 
@@ -83,24 +60,31 @@ class DeltaDBFile:
 
 class DeltaDBRecord:
 
-    def __init__(self, delta, src, dest):
-        self.delta = delta
+    def __init__(self, src, usrc, dest, udest, delta, udelta):
         self.src = src
+        self.usrc = usrc
         self.dest = dest
+        self.udest = udest
+        self.delta = delta
+        self.udelta = udelta
 
-    def _format_checksum(self, chksum_list):
+    def _format_checksum(self, chksum_dict, uchksum_dict):
         rv = []
-        for chksum_type, chksum in chksum_list:
-            rv.append('%s %s' % (chksum_type.upper(), chksum))
+        for chksum_type in chksum_dict:
+            handler = get_handler(chksum_type)
+            rv.append('%s %s U%s %s' % (chksum_type.upper(),
+                                        handler.long2str(chksum_dict[chksum_type]),
+                                        chksum_type.upper(),
+                                        handler.long2str(uchksum_dict[chksum_type])))
         return ' '.join(rv)
 
     def __str__(self):
         rv = [
             os.path.basename(self.delta.fname),
             os.path.basename(self.src.fname) + '\t' + os.path.basename(self.dest.fname),
-            self._format_checksum(self.src.chksums),
-            self._format_checksum(self.dest.chksums),
-            self._format_checksum(self.delta.chksums),
+            self._format_checksum(self.src.chksums, self.usrc.chksums),
+            self._format_checksum(self.dest.chksums, self.udest.chksums),
+            self._format_checksum(self.delta.chksums, self.udelta.chksums),
         ]
         return os.linesep.join(rv)
 
@@ -117,10 +101,17 @@ class DeltaDB(list):
 
     def _parse_checksum_line(self, line):
         pieces = line.split()
-        chksum = []
+        chksums = OrderedDict()
+        uchksums = OrderedDict()
         for key, value in izip(pieces[::2], pieces[1::2]):
-            chksum.append((key.lower(), value.strip()))
-        return chksum
+            key = key.lower()[:]
+            mykey = key[0] == 'u' and key[1:] or key
+            myvalue = get_handler(mykey).str2long(value.strip())
+            if key[0] == 'u':
+                uchksums[mykey] = myvalue
+            else:
+                chksums[mykey] = myvalue
+        return chksums, uchksums
 
     def _parse_db(self):
 
@@ -142,23 +133,28 @@ class DeltaDB(list):
             src_name, dest_name = tuple(record[1].split('\t'))
 
             # lines 3,4 and 5 are checksums
-            chksum_src = self._parse_checksum_line(record[2])
-            chksum_dest = self._parse_checksum_line(record[3])
-            chksum_delta = self._parse_checksum_line(record[4])
+            chksum_src, uchksum_src = self._parse_checksum_line(record[2])
+            chksum_dest, uchksum_dest = self._parse_checksum_line(record[3])
+            chksum_delta, uchksum_delta = self._parse_checksum_line(record[4])
 
-            # building DeltaDBFile objects
-            delta = DeltaDBFile(delta_name, chksums=chksum_delta)
-            src = DeltaDBFile(src_name, chksums=chksum_src)
-            dest = DeltaDBFile(dest_name, chksums=chksum_dest)
-
-            self.append(DeltaDBRecord(delta, src, dest))
+            self.append(DeltaDBRecord(DeltaDBFile(src_name, chksum_src),
+                                      DeltaDBFile(None, uchksum_src),
+                                      DeltaDBFile(dest_name, chksum_dest),
+                                      DeltaDBFile(None, uchksum_dest),
+                                      DeltaDBFile(delta_name, chksum_delta),
+                                      DeltaDBFile(None, uchksum_delta)))
 
     def __contains__(self, key):
-        for i in self:
-            if key == i.delta.fname:
+        for dbfile in self:
+            if key == dbfile.delta.fname:
                 return True
         return False
 
+    def get(self, delta):
+        for dbfile in self:
+            if dbfile.delta.fname == delta:
+                return dbfile
+    
     def add(self, record):
         taken = []
         for i in range(len(self)):
