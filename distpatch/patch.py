@@ -15,12 +15,10 @@ class PatchException(Exception):
 
 class Patch:
     
-    def __init__(self, src_dir, src_distfile, dest_distfile, real_src_distfile=None):
+    def __init__(self, src_dir, src_distfile, dest_distfile):
         self.src_dir = src_dir
         self.src_distfile = src_distfile
         self.dest_distfile = dest_distfile
-        # full path to the src distfile, used by distpatch.diff
-        self.real_src_distfile = real_src_distfile
         self._generate_delta_sequence()
     
     def _get_diff(self, src_distfile):
@@ -61,12 +59,9 @@ class Patch:
         
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        
-        if self.real_src_distfile is not None:
-            src = self.real_src_distfile
-        else:
-            src = os.path.join(self.src_dir, self.src_distfile)
-        
+
+        src = uncompressed_filename_and_compressor(self.src_distfile)[0]
+        src = os.path.join(self.src_dir, src)
         dest, compressor = uncompressed_filename_and_compressor(self.dest_distfile)
         dest = os.path.join(output_dir, dest)
         

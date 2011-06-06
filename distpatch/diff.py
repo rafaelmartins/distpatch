@@ -31,6 +31,7 @@ class Diff:
         self.dest_ebuild = dest_ebuild
     
     def fetch_distfiles(self):
+        # TODO: fetch from distpatch.package, avoinding dupes
         self.src_ebuild.fetch(self.src_distfile)
         self.dest_ebuild.fetch(self.dest_distfile)
     
@@ -53,9 +54,11 @@ class Diff:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
+        # getting uncompressed/compressed paths for distfiles
         usrc, src = self._copy_and_unpack(self.src_distfile, output_dir)
         udest, dest = self._copy_and_unpack(self.dest_distfile, output_dir)
 
+        # building delta filename
         self.diff_file = os.path.join(output_dir,
                                       '%s-%s.%s' % (self.src_distfile,
                                                     self.dest_distfile,
@@ -67,23 +70,28 @@ class Diff:
         if call(cmd) != os.EX_OK:
             raise DiffException('Failed to generate diff: %s' % self.diff_file)
         
-        # validation of delta
+        # starting the validation of delta
+
+        # temporary dir
         tmpdir = mkdtemp()
         atexit.register(remove_tmpdir, tmpdir)
-        tmpsrc = os.path.join(tmpdir, os.path.basename(usrc))
-        tmpdest = os.path.join(tmpdir, os.path.basename(udest))
+
+        # copy files to temporary dir
         copy2(usrc, tmpdir)
         copy2(self.diff_file, tmpdir)
-        patch = Patch(tmpdir, self.src_distfile, self.dest_distfile, tmpsrc)
+
+        # reconstruct dest file from src and delta
+        patch = Patch(tmpdir, self.src_distfile, self.dest_distfile)
         patch.reconstruct(tmpdir, False)
 
-        if DeltaDBFile(udest) != DeltaDBFile(tmpdest):
+        # compare checksums of the uncompressed dest, in output_dir, and the
+        # reconstructed dest, in tmpdir
+        if DeltaDBFile(udest) != DeltaDBFile(os.path.join(tmpdir,
+                                                          os.path.basename(udest))):
             raise DiffException('Bad delta! :(')
         
-        tmpdir2 = mkdtemp()
-        atexit.register(remove_tmpdir, tmpdir2)
-        tmp_diff_file = os.path.join(tmpdir2, os.path.basename(self.diff_file))
-        copy2(self.diff_file, tmp_diff_file)
+        # get delta info before compress
+        udelta_db = DeltaDBFile(self.diff_file)
         
         # xz it
         if compress:
@@ -96,10 +104,9 @@ class Diff:
                                       DeltaDBFile(dest),
                                       DeltaDBFile(udest),
                                       DeltaDBFile(self.diff_file),
-                                      DeltaDBFile(tmp_diff_file))
+                                      udelta_db)
 
         # remove sources
-        rmtree(tmpdir2)
         rmtree(tmpdir)
         if clean_sources:
             os.unlink(usrc)
