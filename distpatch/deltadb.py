@@ -173,20 +173,3 @@ class DeltaDB(list):
         fp = AtomicWriteFile(self.filename)
         fp.write('\n--\n'.join([str(i) for i in self]))
         fp.close()
-
-    def _resolve(self, src, dest, solved):
-        for record in self:
-            if record.src.fname == src:
-                solved.append(record)
-                if record.dest.fname != dest:
-                    self._resolve(record.dest.fname, dest, solved)
-
-    def resolve(self, src, dest):
-        solved = []
-        self._resolve(src, dest, solved)
-        if len(solved) == 0:
-            return []
-        last_delta = solved[-1]
-        if last_delta.dest.fname != dest:
-            return []
-        return solved
