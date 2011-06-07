@@ -3,7 +3,9 @@
 from collections import OrderedDict
 from diff import Diff
 from ebuild import Ebuild
+from patch import Patch
 
+import os
 import portage
 
 dbapi = portage.db[portage.settings['ROOT']]['porttree'].dbapi
@@ -14,13 +16,13 @@ class PackageException(Exception):
 
 class Package:
     
-    def __init__(self, atom):
+    def __init__(self, atom, deltadb):
         self.atom = atom
+        self.deltadb = deltadb
         self.ebuilds = OrderedDict()
         for cpv in dbapi.match(atom):
             self.ebuilds[cpv] = Ebuild(cpv)
-        self._lineage_identification()
-    
+
     def _lineage_identification(self):
         self.diffs = []
         diffs = []
@@ -75,7 +77,35 @@ class Package:
                     self.diffs = tmp_diffs
             self.diffs.append(diff)
             taken[diff.dest_distfile] = (avg, diff)
-    
+
+    def _resolve_distfiles(self):
+        patches_dict = OrderedDict()
+        for cpv, ebuild in self.ebuilds.iteritems():
+            patches_dict[cpv] = []
+            for distfile in ebuild.src_uri_map:
+                tmp = []
+                line = self.deltadb.get_by_dest(distfile)
+                while len(line) > 0:
+                    if line[0].dest.fname in self._distfiles_list:
+                        break
+                    tmp.append(line[0])
+                    line = self.deltadb.get_by_dest(line[0].src.fname)
+                patches_dict[cpv].append(tmp)
+        self.patches = []
+        for cpv, records_list in patches_dict.iteritems():
+            for records in records_list:
+                if len(records) == 0:
+                    continue
+                records = list(reversed(records))
+                self.patches.append(Patch(*records))
+
+    def diff(self):
+        self._lineage_identification()
+
+    def patch(self):
+        self._distfiles_list = os.listdir(portage.settings['DISTDIR'])
+        self._resolve_distfiles()
+
     def fetch_distfiles(self):
         for diff in self.diffs:
             diff.fetch_distfiles()

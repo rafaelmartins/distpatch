@@ -3,3 +3,11 @@
 
 # Wing IDE project file
 *.wpr
+
+# Test files
+*.db
+*.xz
+*.gz
+*.tgz
+*.bz2
+*.tbz2

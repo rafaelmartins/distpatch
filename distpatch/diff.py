@@ -79,16 +79,6 @@ class Diff:
         # copy files to temporary dir
         copy2(usrc, tmpdir)
         copy2(self.diff_file, tmpdir)
-
-        # reconstruct dest file from src and delta
-        patch = Patch(tmpdir, self.src_distfile, self.dest_distfile)
-        patch.reconstruct(tmpdir, False)
-
-        # compare checksums of the uncompressed dest, in output_dir, and the
-        # reconstructed dest, in tmpdir
-        if DeltaDBFile(udest) != DeltaDBFile(os.path.join(tmpdir,
-                                                          os.path.basename(udest))):
-            raise DiffException('Bad delta! :(')
         
         # get delta info before compress
         udelta_db = DeltaDBFile(self.diff_file)
@@ -105,6 +95,16 @@ class Diff:
                                       DeltaDBFile(udest),
                                       DeltaDBFile(self.diff_file),
                                       udelta_db)
+
+        # reconstruct dest file from src and delta
+        patch = Patch(self.dbrecord)
+        patch.reconstruct(tmpdir, tmpdir, False)
+
+        # compare checksums of the uncompressed dest, in output_dir, and the
+        # reconstructed dest, in tmpdir
+        if DeltaDBFile(udest) != DeltaDBFile(os.path.join(tmpdir,
+                                                          os.path.basename(udest))):
+            raise DiffException('Bad delta! :(')
 
         # remove sources
         rmtree(tmpdir)

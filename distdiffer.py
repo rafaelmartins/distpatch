@@ -65,7 +65,8 @@ def main():
     for package in packages:
         if args.verbose:
             print '>>> Package: %s' %  package
-        pkg = Package(package)
+        pkg = Package(package, db)
+        pkg.diff()
         if args.verbose:
             print '    >>> Versions:'
             for cpv in pkg.ebuilds:

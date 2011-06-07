@@ -154,6 +154,13 @@ class DeltaDB(list):
         for dbfile in self:
             if dbfile.delta.fname == delta:
                 return dbfile
+
+    def get_by_dest(self, dest):
+        rv = []
+        for dbfile in self:
+            if dbfile.dest.fname == dest:
+                rv.append(dbfile)
+        return rv
     
     def add(self, record):
         taken = []
