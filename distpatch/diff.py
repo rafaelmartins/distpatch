@@ -100,12 +100,6 @@ class Diff:
         patch = Patch(self.dbrecord)
         patch.reconstruct(tmpdir, tmpdir, False)
 
-        # compare checksums of the uncompressed dest, in output_dir, and the
-        # reconstructed dest, in tmpdir
-        if DeltaDBFile(udest) != DeltaDBFile(os.path.join(tmpdir,
-                                                          os.path.basename(udest))):
-            raise DiffException('Bad delta! :(')
-
         # remove sources
         rmtree(tmpdir)
         if clean_sources:

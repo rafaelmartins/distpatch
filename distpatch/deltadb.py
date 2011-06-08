@@ -171,5 +171,5 @@ class DeltaDB(list):
             del self[i]
         self.append(record)
         fp = AtomicWriteFile(self.filename)
-        fp.write('\n--\n'.join([str(i) for i in self]))
+        fp.write('\n--\n'.join(map(str, self)))
         fp.close()

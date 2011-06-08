@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from itertools import izip
+from shutil import move
 from subprocess import call
+from deltadb import DeltaDBFile
 from helpers import uncompressed_filename_and_compressor
 
 import glob
@@ -17,12 +20,15 @@ class PatchException(Exception):
 class Patch:
     
     def __init__(self, *dbrecords):
+        if len(dbrecords) == 0:
+            raise PatchException('Patch requires an argument')
         self.dbrecords = dbrecords
-        self.src_distfile = os.path.basename(dbrecords[0].src.fname)
-        self.dest_distfile = os.path.basename(dbrecords[-1].dest.fname)
+        self.src = dbrecords[0].src
+        self.dest = dbrecords[-1].dest
+        self.udest = dbrecords[-1].udest
         if not self._verify_deltas():
             raise PatchException('Invalid delta sequence: %s' % self.dbrecords)
-    
+
     def _verify_deltas(self):
         self.patch_format = None
         for record in self.dbrecords:
@@ -46,19 +52,41 @@ class Patch:
             input_dir = os.path.join(distdir, 'patches')
         if output_dir is None:
             output_dir = distdir
-        src = os.path.join(distdir, self.src_distfile)
-        dest, compressor = uncompressed_filename_and_compressor(self.dest_distfile)
+        src = os.path.join(distdir, self.src.fname)
+        dest, compressor = uncompressed_filename_and_compressor(self.dest.fname)
         dest = os.path.join(output_dir, dest)
+        deltas = [os.path.join(input_dir, i.delta.fname) for i in self.dbrecords]
+
+        # validate source and deltas before recompose
+        if self.src != DeltaDBFile(src):
+            raise PatchException('Bad checksum for source: %s' % self.src.fname)
+        for delta, delta_record in izip(deltas, self.dbrecords):
+            if delta_record.delta != DeltaDBFile(delta):
+                raise PatchException('Bad checksum for delta: %s' % \
+                                     delta_record.delta.fname)
         
-        cmd = [patcher, src, '--patch-format', self.patch_format]
-        cmd += [os.path.join(input_dir, i.delta.fname) for i in self.dbrecords]
+        cmd = [patcher, src, '--patch-format', self.patch_format] + deltas
         cmd.append(dest)
 
         if call(cmd) != os.EX_OK:
             raise PatchException('Failed to reconstruct file: %s' % dest)
 
-        if compress and compressor is not None and call([compressor, dest]) != os.EX_OK:
-            raise PatchException('Failed to compress reconstructed file: %s' % dest)
+        # validate checksums for uncompressed destination
+        if self.udest != DeltaDBFile(dest):
+            raise PatchException('Bad checksum for uncompressed destination: %s' % \
+                                 self.dest.fname)
+
+        if compress and compressor is not None:
+            if call([compressor, dest]) != os.EX_OK:
+                raise PatchException('Failed to compress reconstructed file: %s' % \
+                                     dest)
+            dest += os.path.splitext(self.dest.fname)[1]
+            if self.dest != DeltaDBFile(dest):
+                invalid_dir = os.path.join(output_dir, 'delta-reconstructed')
+                if not os.path.exists(invalid_dir):
+                    os.makedirs(invalid_dir)
+                move(dest, os.path.join(invalid_dir, os.path.basename(dest)))
+        self.dest_distfile = dest
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__,
