@@ -6,7 +6,6 @@ from subprocess import call
 from deltadb import DeltaDBFile
 from helpers import uncompressed_filename_and_compressor
 
-import glob
 import os
 import portage
 import re

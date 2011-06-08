@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from hashlib import md5
 from shutil import copy2, rmtree
 from subprocess import call
 from tempfile import mkdtemp
