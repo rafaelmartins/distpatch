@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from distpatch.deltadb import DeltaDB
+from distpatch.package import Package
+from distpatch.patch import PatchException
+
+import argparse
+import os
+import sys
+
+parser = argparse.ArgumentParser(
+    description='Recompose distfiles of Gentoo Linux packages from binary deltas, as needed')
+
+# positional arguments
+parser.add_argument('cpv_list', metavar='CPV', nargs='*',
+                    help='Package CPVs')
+
+# optional arguments
+parser.add_argument('-d', '--db', dest='delta_db', metavar='FILE',
+                    required=True, help='File to be used as delta database')
+parser.add_argument('-i', '--input', dest='input_dir', metavar='DIR',
+                    help='Input directory (default: $DISTDIR/patches)')
+parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
+                    help='Output directory (default: $DISTDIR, compressed ' \
+                    'distfiles with unmatching checksums are saved at ' \
+                    '$DISTDIR/delta-reconstructed)')
+parser.add_argument('-f', '--file', dest='cpv_file', metavar='FILE',
+                    help='Read package CPVs from a line-separated file. ' \
+                    'This option will ignore `CPV` arguments')
+parser.add_argument('--stdin', dest='stdin', action='store_true', help='Read ' \
+                    'line-separated package atoms from stdin. This option will ' \
+                    'ignore `package-atom` arguments and `--file`')
+parser.add_argument('-c', '--no-compress', dest='no_compress', action='store_true',
+                    help='Disable the compression of regenerated tarballs')
+parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                    help='Enable verbose mode')
+
+def main():
+    args = parser.parse_args()
+    db = DeltaDB(args.delta_db)
+
+    # get the list of packages to be processed
+    cpv_list = args.cpv_list[:]
+    if args.stdin:
+        cpv_list = []
+        for line in sys.stdin:
+            cpv_list.append(line.strip())
+    elif args.cpv_file is not None:
+        if not os.path.isfile(args.cpv_file):
+            parser.error('invalid file: %s' % args.cpv_file)
+        cpv_list = []
+        with open(args.cpv_file) as fp:
+            for line in fp:
+                cpv_list.append(line.strip())
+
+    if len(cpv_list) == 0:
+        parser.print_help()
+        return
+
+    if args.verbose:
+        print '>>> Starting distpatcher ...\n'
+
+    for cpv in cpv_list:
+        if args.verbose:
+            print '>>> CPV: %s' %  cpv
+        pkg = Package(db)
+        pkg.patch(cpv, args.output_dir)
+        if args.verbose:
+            print '    >>> Deltas:'
+            if len(pkg.patches) == 0:
+                print '        None\n'
+            else:
+                for patch in pkg.patches:
+                    print '        %s' % '\n            -> '.join(
+                        [i.delta.fname for i in patch.dbrecords])
+        if len(pkg.patches) == 0:
+            continue
+        #if args.verbose:
+        #    print '    >>> Fetching distfiles:'
+        #for patch in pkg.patches:
+        #    patch.fetch_deltas()
+        if args.verbose:
+            print '    >>> Reconstructing distfiles:'
+        for patch in pkg.patches:
+            if args.verbose:
+                sys.stdout.write('        %s ... ' % '\n            -> '.join(
+                    [i.delta.fname for i in patch.dbrecords]))
+                sys.stdout.flush()
+            try:
+                patch.reconstruct(args.input_dir, args.output_dir,
+                                  not args.no_compress)
+            except PatchException, err:
+                if args.verbose:
+                    print 'failed!'
+                    print '            %s' % str(err)
+            else:
+                if args.verbose:
+                    print 'done!'
+                    print '            %s' % os.path.basename(patch.dest_distfile)
+        if args.verbose:
+            print
+
+if __name__ == '__main__':
+    main()
