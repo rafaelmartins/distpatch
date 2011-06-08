@@ -87,6 +87,8 @@ class Patch:
                 move(dest, os.path.join(invalid_dir, os.path.basename(dest)))
         self.dest_distfile = dest
 
+    def __str__(self):
+        return ' -> '.join([i.delta.fname for i in self.dbrecords])
+
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__,
-                            ' -> '.join([i.delta.fname for i in self.dbrecords]))
+        return '<%s %s>' % (self.__class__.__name__, self.__str__())

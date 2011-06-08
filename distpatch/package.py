@@ -16,12 +16,8 @@ class PackageException(Exception):
 
 class Package:
     
-    def __init__(self, atom, deltadb):
-        self.atom = atom
+    def __init__(self, deltadb):
         self.deltadb = deltadb
-        self.ebuilds = OrderedDict()
-        for cpv in dbapi.match(atom):
-            self.ebuilds[cpv] = Ebuild(cpv)
 
     def _lineage_identification(self):
         self.diffs = []
@@ -79,31 +75,39 @@ class Package:
             taken[diff.dest_distfile] = (avg, diff)
 
     def _resolve_distfiles(self):
-        patches_dict = OrderedDict()
-        for cpv, ebuild in self.ebuilds.iteritems():
-            patches_dict[cpv] = []
-            for distfile in ebuild.src_uri_map:
-                tmp = []
-                line = self.deltadb.get_by_dest(distfile)
-                while len(line) > 0:
-                    if line[0].dest.fname in self._distfiles_list:
-                        break
-                    tmp.append(line[0])
-                    line = self.deltadb.get_by_dest(line[0].src.fname)
-                patches_dict[cpv].append(tmp)
         self.patches = []
-        for cpv, records_list in patches_dict.iteritems():
-            for records in records_list:
-                if len(records) == 0:
-                    continue
-                records = list(reversed(records))
-                self.patches.append(Patch(*records))
+        patches_list = []
+        for distfile in self.ebuild.src_uri_map:
+            tmp = []
+            line = self.deltadb.get_by_dest(distfile)
+            while len(line) > 0:
+                if line[0].dest.fname in self._distfiles_list:
+                    break
+                tmp.append(line[0])
+                line = self.deltadb.get_by_dest(line[0].src.fname)
+            patches_list.append(tmp)
+        for records in patches_list:
+            if len(records) == 0:
+                continue
+            records = list(reversed(records))
+            self.patches.append(Patch(*records))
 
-    def diff(self):
+    def diff(self, atom):
+        self.ebuilds = OrderedDict()
+        for cpv in dbapi.match(atom):
+            self.ebuilds[cpv] = Ebuild(cpv)
         self._lineage_identification()
 
-    def patch(self):
-        self._distfiles_list = os.listdir(portage.settings['DISTDIR'])
+    def patch(self, cpv, output_dir=None):
+        if output_dir is None:
+            output_dir = portage.settings['DISTDIR']
+        self.ebuild = Ebuild(cpv)
+        self._distfiles_list = []
+        if os.path.isdir(output_dir):
+            self._distfiles_list += os.listdir(output_dir)
+        delta_dir = os.path.join(output_dir, 'delta-reconstructed')
+        if os.path.isdir(delta_dir):
+            self._distfiles_list += os.listdir(delta_dir)
         self._resolve_distfiles()
 
     def fetch_distfiles(self):

@@ -3,9 +3,7 @@
 
 from distpatch.deltadb import DeltaDB
 from distpatch.diff import DiffException
-from distpatch.ebuild import EbuildException
-from distpatch.package import Package, PackageException
-from distpatch.patch import PatchException
+from distpatch.package import Package
 
 import argparse
 import os
@@ -65,16 +63,15 @@ def main():
     for package in packages:
         if args.verbose:
             print '>>> Package: %s' %  package
-        pkg = Package(package, db)
-        pkg.diff()
+        pkg = Package(db)
+        pkg.diff(package)
         if args.verbose:
             print '    >>> Versions:'
             for cpv in pkg.ebuilds:
                 print '        %s' % cpv
             print '    >>> Deltas:'
             if len(pkg.diffs) == 0:
-                print '        None'
-                print
+                print '        None\n'
             else:
                 for diff in pkg.diffs:
                     print '        %s -> %s' % (diff.src_distfile, diff.dest_distfile)
