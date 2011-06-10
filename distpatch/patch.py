@@ -33,7 +33,7 @@ class Patch:
     def fetch_deltas(self, output_dir=None):
         # mirror://gentoo/ will fail for now... portage needs a patch
         root_url = os.environ.get('DELTAS_ROOT_URL', 'mirror://gentoo')
-        if root_url == 'mirror://gentoo/':
+        if root_url == 'mirror://gentoo':
             raise PatchException('You should set the environment variable DELTAS_ROOT_URL.')
         if output_dir is None:
             output_dir = os.path.join(portage.settings['DISTDIR'], 'patches')
