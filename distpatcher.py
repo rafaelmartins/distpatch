@@ -76,10 +76,10 @@ def main():
                         [i.delta.fname for i in patch.dbrecords])
         if len(pkg.patches) == 0:
             continue
-        #if args.verbose:
-        #    print '    >>> Fetching distfiles:'
-        #for patch in pkg.patches:
-        #    patch.fetch_deltas()
+        if args.verbose:
+            print '    >>> Fetching deltas:'
+        for patch in pkg.patches:
+            patch.fetch_deltas(args.input_dir)
         if args.verbose:
             print '    >>> Reconstructing distfiles:'
         for patch in pkg.patches:

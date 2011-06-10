@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from itertools import izip
+from portage.package.ebuild.fetch import fetch
 from shutil import move
 from subprocess import call
 from deltadb import DeltaDBFile
@@ -8,6 +9,7 @@ from helpers import uncompressed_filename_and_compressor
 
 import os
 import portage
+import posixpath
 import re
 
 re_diff_filename = re.compile(r'(?P<dest>.+)\.(?P<format>[^(\.xz)]+)(\.xz)?$')
@@ -27,6 +29,21 @@ class Patch:
         self.udest = dbrecords[-1].udest
         if not self._verify_deltas():
             raise PatchException('Invalid delta sequence: %s' % self.dbrecords)
+
+    def fetch_deltas(self, output_dir=None):
+        # mirror://gentoo/ will fail for now... portage needs a patch
+        root_url = os.environ.get('DELTAS_ROOT_URL', 'mirror://gentoo')
+        if root_url == 'mirror://gentoo/':
+            raise PatchException('You should set the environment variable DELTAS_ROOT_URL.')
+        if output_dir is None:
+            output_dir = os.path.join(portage.settings['DISTDIR'], 'patches')
+        mysettings = portage.config(clone=portage.settings)
+        mysettings['DISTDIR'] = output_dir
+        urls = []
+        for record in self.dbrecords:
+            urls.append(posixpath.join(root_url, record.delta.fname))
+        if not fetch(urls, mysettings):
+            raise PatchException('Failed to fetch deltas: %s' % urls)
 
     def _verify_deltas(self):
         self.patch_format = None
