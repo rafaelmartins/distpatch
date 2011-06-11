@@ -100,7 +100,7 @@ class Diff:
 
         # reconstruct dest file from src and delta
         patch = Patch(self.dbrecord)
-        patch.reconstruct(tmpdir, tmpdir, False)
+        patch.reconstruct(output_dir, tmpdir, False)
 
         # remove sources
         rmtree(tmpdir)

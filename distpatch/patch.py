@@ -70,10 +70,12 @@ class Patch:
             input_dir = os.path.join(distdir, 'patches')
         if output_dir is None:
             output_dir = distdir
-        src = os.path.join(distdir, self.src.fname)
-        dest, compressor = uncompressed_filename_and_compressor(self.dest.fname)
+        src = os.path.join(distdir, os.path.basename(self.src.fname))
+        dest, compressor = uncompressed_filename_and_compressor(
+            os.path.basename(self.dest.fname))
         dest = os.path.join(output_dir, dest)
-        deltas = [os.path.join(input_dir, i.delta.fname) for i in self.dbrecords]
+        deltas = [os.path.join(input_dir, os.path.basename(i.delta.fname)) \
+                  for i in self.dbrecords]
 
         # validate source and deltas before recompose
         if self.src != DeltaDBFile(src):
