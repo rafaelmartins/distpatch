@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from diff import Diff
-from ebuild import Ebuild
-from patch import Patch
-
 import os
 import portage
 
+from collections import OrderedDict
+
+from distpatch.diff import Diff
+from distpatch.ebuild import Ebuild
+from distpatch.patch import Patch
+
 dbapi = portage.db[portage.settings['ROOT']]['porttree'].dbapi
+
 
 class PackageException(Exception):
     pass
 
 
 class Package:
-    
+
     def __init__(self, deltadb):
         self.deltadb = deltadb
 
@@ -43,11 +45,11 @@ class Package:
                         else:
                             break
                     for i in range(min(len(src_distfile), len(dest_distfile))):
-                        if src_distfile[-i-1] == dest_distfile[-i-1]:
-                            suffix = src_distfile[-i-1] + suffix
+                        if src_distfile[-i - 1] == dest_distfile[-i - 1]:
+                            suffix = src_distfile[-i - 1] + suffix
                         else:
                             break
-                    avg = float(len(prefix) + len(suffix))/2
+                    avg = float(len(prefix) + len(suffix)) / 2
                     if avg in avgs:
                         if avg_distfile == avgs[avg]:
                             avg_distfile = None

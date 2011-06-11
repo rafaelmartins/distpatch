@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from distpatch.deltadb import DeltaDB
-from distpatch.package import Package
-from distpatch.patch import PatchException
-
 import argparse
 import os
 import sys
 
+from distpatch.deltadb import DeltaDB
+from distpatch.package import Package
+from distpatch.patch import PatchException
+
+
 parser = argparse.ArgumentParser(
-    description='Recompose distfiles of Gentoo Linux packages from binary deltas, as needed')
+    description='Recompose distfiles of Gentoo Linux packages from binary ' \
+    'deltas, as needed')
 
 # positional arguments
 parser.add_argument('cpv_list', metavar='CPV', nargs='*',
@@ -28,13 +30,16 @@ parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
 parser.add_argument('-f', '--file', dest='cpv_file', metavar='FILE',
                     help='Read package CPVs from a line-separated file. ' \
                     'This option will ignore `CPV` arguments')
-parser.add_argument('--stdin', dest='stdin', action='store_true', help='Read ' \
-                    'line-separated package atoms from stdin. This option will ' \
-                    'ignore `package-atom` arguments and `--file`')
-parser.add_argument('-c', '--no-compress', dest='no_compress', action='store_true',
-                    help='Disable the compression of regenerated tarballs')
+parser.add_argument('--stdin', dest='stdin', action='store_true',
+                    help='Read line-separated package atoms from stdin. ' \
+                    'This option will ignore `package-atom` arguments and ' \
+                    '`--file`')
+parser.add_argument('-c', '--no-compress', dest='no_compress',
+                    action='store_true', help='Disable the compression of ' \
+                    'regenerated tarballs')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                     help='Enable verbose mode')
+
 
 def main():
     args = parser.parse_args()
@@ -63,7 +68,7 @@ def main():
 
     for cpv in cpv_list:
         if args.verbose:
-            print '>>> CPV: %s' %  cpv
+            print '>>> CPV: %s' % cpv
         pkg = Package(db)
         pkg.patch(cpv, args.output_dir)
         if args.verbose:
@@ -97,7 +102,8 @@ def main():
             else:
                 if args.verbose:
                     print 'done!'
-                    print '            %s' % os.path.basename(patch.dest_distfile)
+                    print '            %s' % \
+                          os.path.basename(patch.dest_distfile)
         if args.verbose:
             print
 

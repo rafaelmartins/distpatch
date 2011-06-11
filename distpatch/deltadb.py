@@ -16,13 +16,13 @@
 
 '''
 
+import codecs
+import os
+
 from collections import OrderedDict
 from itertools import izip
 from snakeoil.chksum import get_chksums, get_handler
 from snakeoil.fileutils import AtomicWriteFile
-
-import codecs
-import os
 
 
 class DeltaDBException(Exception):
@@ -161,7 +161,7 @@ class DeltaDB(list):
             if dbfile.dest.fname == dest:
                 rv.append(dbfile)
         return rv
-    
+
     def add(self, record):
         taken = []
         for i in range(len(self)):

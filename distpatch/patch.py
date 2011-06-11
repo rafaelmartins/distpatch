@@ -1,25 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from itertools import izip
-from portage.package.ebuild.fetch import fetch
-from shutil import move
-from subprocess import call
-from deltadb import DeltaDBFile
-from helpers import uncompressed_filename_and_compressor
-
 import os
 import portage
 import posixpath
 import re
 
+from itertools import izip
+from portage.package.ebuild.fetch import fetch
+from shutil import move
+from subprocess import call
+
+from distpatch.deltadb import DeltaDBFile
+from distpatch.helpers import uncompressed_filename_and_compressor
+
 re_diff_filename = re.compile(r'(?P<dest>.+)\.(?P<format>[^(\.xz)]+)(\.xz)?$')
+
 
 class PatchException(Exception):
     pass
 
 
 class Patch:
-    
+
     def __init__(self, *dbrecords):
         if len(dbrecords) == 0:
             raise PatchException('Patch requires an argument')
@@ -80,7 +82,7 @@ class Patch:
             if delta_record.delta != DeltaDBFile(delta):
                 raise PatchException('Bad checksum for delta: %s' % \
                                      delta_record.delta.fname)
-        
+
         cmd = [patcher, src, '--patch-format', self.patch_format] + deltas
         cmd.append(dest)
 

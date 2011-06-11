@@ -2,10 +2,11 @@
 
 import os
 
+
 def uncompressed_filename_and_compressor(tarball):
     '''returns the filename of the given tarball uncompressed and the compressor.
     '''
-    
+
     compressors = {
         '.gz': ('gzip', ''),
         '.bz2': ('bzip2', ''),
@@ -14,7 +15,7 @@ def uncompressed_filename_and_compressor(tarball):
         '.tgz': ('gzip', '.tar'),
         '.tbz2': ('bzip2', '.tar'),
     }
-    
+
     dest, ext = os.path.splitext(tarball)
     compressor = compressors.get(ext.lower(), None)
     if compressor is None:

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
+import os
+import sys
+
 from distpatch.deltadb import DeltaDB
 from distpatch.diff import DiffException
 from distpatch.package import Package
 
-import argparse
-import os
-import sys
 
 parser = argparse.ArgumentParser(
     description='Creates binary deltas for distfiles of Gentoo Linux packages')
@@ -25,15 +26,19 @@ parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
 parser.add_argument('-f', '--file', dest='packages_file', metavar='FILE',
                     help='Read package atoms from a line-separated file. ' \
                     'This option will ignore `package-atom` arguments')
-parser.add_argument('--stdin', dest='stdin', action='store_true', help='Read ' \
-                    'line-separated package atoms from stdin. This option will ' \
-                    'ignore `package-atom` arguments and `--file`')
-parser.add_argument('-c', '--no-compress', dest='no_compress', action='store_true',
-                    help='Disable the compression of generated deltas with xz(1)')
+parser.add_argument('--stdin', dest='stdin', action='store_true',
+                    help='Read line-separated package atoms from stdin. ' \
+                    'This option will ignore `package-atom` arguments and ' \
+                    '`--file`')
+parser.add_argument('-c', '--no-compress', dest='no_compress',
+                    action='store_true', help='Disable the compression of ' \
+                    'generated deltas with xz(1)')
 parser.add_argument('-p', '--preserve', dest='preserve', action='store_true',
-                    help='Preserve the uncompressed sources in the output directory')
+                    help='Preserve the uncompressed sources in the output ' \
+                    'directory')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                     help='Enable verbose mode')
+
 
 def main():
     args = parser.parse_args()
@@ -62,7 +67,7 @@ def main():
 
     for package in packages:
         if args.verbose:
-            print '>>> Package: %s' %  package
+            print '>>> Package: %s' % package
         pkg = Package(db)
         pkg.diff(package)
         if args.verbose:
@@ -74,7 +79,8 @@ def main():
                 print '        None\n'
             else:
                 for diff in pkg.diffs:
-                    print '        %s -> %s' % (diff.src_distfile, diff.dest_distfile)
+                    print '        %s -> %s' % (diff.src_distfile,
+                                                diff.dest_distfile)
         if len(pkg.diffs) == 0:
             continue
         if args.verbose:
