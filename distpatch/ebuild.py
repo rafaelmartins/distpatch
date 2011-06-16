@@ -17,11 +17,9 @@ class EbuildException(Exception):
 class Ebuild:
 
     def __init__(self, cpv):
+        if not dbapi.cpv_exists(cpv):
+            raise EbuildException('Invalid CPV: %s' % cpv)
         self.cpv = cpv
-        try:
-            dbapi.aux_get(self.cpv, [])
-        except:
-            raise EbuildException('Invalid CPV: %s' % self.cpv)
 
     @property
     def eapi(self):

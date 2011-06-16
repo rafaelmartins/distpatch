@@ -7,8 +7,10 @@ import sys
 
 from distpatch.deltadb import DeltaDB
 from distpatch.diff import DiffException
-from distpatch.package import Package
+from distpatch.package import Package, cp_all
 
+
+os.environ.setdefault('ACCEPT_KEYWORDS', '**')
 
 parser = argparse.ArgumentParser(
     description='Creates binary deltas for distfiles of Gentoo Linux packages')
@@ -23,6 +25,9 @@ parser.add_argument('-d', '--db', dest='delta_db', metavar='FILE',
 parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
                     default=os.getcwd(), help='Output directory (default: ' \
                     'current directory)')
+parser.add_argument('-a', '--all', dest='all', action='store_true',
+                    help='Build deltas for all the packages available in ' \
+                    'gentoo-x86 (aka Portage tree)')
 parser.add_argument('-f', '--file', dest='packages_file', metavar='FILE',
                     help='Read package atoms from a line-separated file. ' \
                     'This option will ignore `package-atom` arguments')
@@ -46,7 +51,9 @@ def main():
 
     # get the list of packages to be processed
     packages = args.packages[:]
-    if args.stdin:
+    if args.all:
+        packages = cp_all()
+    elif args.stdin:
         packages = []
         for line in sys.stdin:
             packages.append(line.strip())

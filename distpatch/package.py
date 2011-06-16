@@ -115,3 +115,6 @@ class Package:
     def fetch_distfiles(self):
         for diff in self.diffs:
             diff.fetch_distfiles()
+
+# used by distdiffer --all
+cp_all = dbapi.cp_all
