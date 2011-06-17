@@ -6,7 +6,7 @@ import os
 import sys
 
 from distpatch.deltadb import DeltaDB
-from distpatch.diff import DiffException
+from distpatch.diff import DiffException, DiffExists
 from distpatch.package import Package, cp_all
 
 
@@ -28,7 +28,7 @@ parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
 parser.add_argument('-a', '--all', dest='all', action='store_true',
                     help='Build deltas for all the packages available in ' \
                     'gentoo-x86 (aka Portage tree)')
-parser.add_argument('-f', '--file', dest='packages_file', metavar='FILE',
+parser.add_argument('--file', dest='packages_file', metavar='FILE',
                     help='Read package atoms from a line-separated file. ' \
                     'This option will ignore `package-atom` arguments')
 parser.add_argument('--stdin', dest='stdin', action='store_true',
@@ -41,6 +41,9 @@ parser.add_argument('-c', '--no-compress', dest='no_compress',
 parser.add_argument('-p', '--preserve', dest='preserve', action='store_true',
                     help='Preserve the uncompressed sources in the output ' \
                     'directory')
+parser.add_argument('-f', '--force', dest='force', action='store_true',
+                    help='try to rebuild a delta even if it already exists ' \
+                    'in disk')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                     help='Enable verbose mode')
 
@@ -103,11 +106,15 @@ def main():
                 sys.stdout.flush()
             try:
                 diff.generate(args.output_dir, not args.preserve,
-                              not args.no_compress)
+                              not args.no_compress, args.force)
             except DiffException, err:
                 if args.verbose:
                     print 'failed!'
                     print '            %s' % str(err)
+            except DiffExists:
+                if args.verbose:
+                    print 'up2date!'
+                    print '            %s' % os.path.basename(diff.diff_file)
             else:
                 if args.verbose:
                     print 'done!'

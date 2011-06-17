@@ -16,6 +16,9 @@ from distpatch.patch import Patch
 class DiffException(Exception):
     pass
 
+class DiffExists(Exception):
+    pass
+
 
 def remove_tmpdir(tmpdir):
     if os.path.isdir(tmpdir):
@@ -47,7 +50,7 @@ class Diff:
             raise DiffException('Failed to unpack file: %s' % tarball)
         return udest, dest
 
-    def generate(self, output_dir, clean_sources=True, compress=True):
+    def generate(self, output_dir, clean_sources=True, compress=True, force=False):
         # running diffball from a git repository, while a version with xz support
         # isn't released :)
         diffball_bindir = os.environ.get('DIFFBALL_BINDIR', '/usr/bin')
@@ -65,6 +68,12 @@ class Diff:
                                       '%s-%s.%s' % (self.src_distfile,
                                                     self.dest_distfile,
                                                     self.patch_format))
+
+        diff_indisk = self.diff_file[:]
+        if compress:
+            diff_indisk += '.xz'
+        if os.path.exists(diff_indisk) and not force:
+            raise DiffExists
 
         cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
                self.diff_file]
