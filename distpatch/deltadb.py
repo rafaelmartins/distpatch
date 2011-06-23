@@ -19,7 +19,10 @@
 import codecs
 import os
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 from itertools import izip
 from snakeoil.chksum import get_chksums, get_handler
 from snakeoil.fileutils import AtomicWriteFile

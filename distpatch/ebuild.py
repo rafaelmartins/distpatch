@@ -3,7 +3,10 @@
 import os
 import portage
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 from portage.dbapi.porttree import _parse_uri_map
 from portage.package.ebuild.fetch import fetch
 
