@@ -6,7 +6,7 @@ import os
 import sys
 
 from distpatch.deltadb import DeltaDB
-from distpatch.diff import DiffException, DiffExists
+from distpatch.diff import DiffExists
 from distpatch.package import Package, cp_all
 
 
@@ -107,14 +107,14 @@ def main():
             try:
                 diff.generate(args.output_dir, not args.preserve,
                               not args.no_compress, args.force)
-            except DiffException, err:
-                if args.verbose:
-                    print 'failed!'
-                    print '            %s' % str(err)
             except DiffExists:
                 if args.verbose:
                     print 'up2date!'
                     print '            %s' % os.path.basename(diff.diff_file)
+            except Exception, err:
+                if args.verbose:
+                    print 'failed!'
+                    print '            %s' % str(err)
             else:
                 if args.verbose:
                     print 'done!'
