@@ -10,7 +10,7 @@ from tempfile import mkdtemp
 
 from distpatch.deltadb import DeltaDBFile, DeltaDBRecord
 from distpatch.helpers import uncompressed_filename_and_compressor
-from distpatch.patch import Patch
+from distpatch.patch import Patch, PatchException
 
 
 class DiffException(Exception):
@@ -99,6 +99,9 @@ class Diff:
         if compress:
             diff_indisk += '.xz'
         if os.path.exists(diff_indisk) and not force:
+            if clean_sources:
+                os.unlink(usrc)
+                os.unlink(udest)
             raise DiffExists
 
         cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
@@ -134,8 +137,15 @@ class Diff:
                                       udelta_db)
 
         # reconstruct dest file from src and delta
-        patch = Patch(self.dbrecord)
-        patch.reconstruct(output_dir, tmpdir, False)
+        try:
+            patch = Patch(self.dbrecord)
+            patch.reconstruct(output_dir, tmpdir, False)
+        except PatchException, err:
+            if clean_sources:
+                os.unlink(usrc)
+                os.unlink(udest)
+                os.unlink(self.diff_file)
+            raise DiffException('Delta reconstruction failed: %s' % str(err))
 
         # remove sources
         rmtree(tmpdir)
