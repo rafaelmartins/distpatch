@@ -3,10 +3,7 @@
 import os
 import portage
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from snakeoil.mappings import OrderedDict
 
 from distpatch.diff import Diff, DiffUnsupported
 from distpatch.ebuild import Ebuild
