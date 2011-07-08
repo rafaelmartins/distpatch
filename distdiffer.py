@@ -114,7 +114,7 @@ def main():
             except Exception, err:
                 if args.verbose:
                     print 'failed!'
-                    print '            %s' % str(err)
+                    print '            %s: %s' % (err.__class__.__name__, str(err))
             else:
                 if args.verbose:
                     print 'done!'

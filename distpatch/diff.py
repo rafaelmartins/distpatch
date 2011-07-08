@@ -16,8 +16,22 @@ from distpatch.patch import Patch
 class DiffException(Exception):
     pass
 
+
 class DiffExists(Exception):
     pass
+
+
+class DiffUnsupported(Exception):
+    pass
+
+
+_supported_formats = [
+    u'.tar',
+    u'.tar.gz', u'.tgz', u'.gz',
+    u'.tar.bz2', u'.tbz2', u'.bz2',
+    u'.tar.xz', u'.xz',
+    u'.tar.lzma', u'.ĺzma',
+]
 
 
 def remove_tmpdir(tmpdir):
@@ -34,6 +48,18 @@ class Diff:
         self.src_ebuild = src_ebuild
         self.dest_distfile = dest_distfile
         self.dest_ebuild = dest_ebuild
+
+    def _validate_distfile(self, distfile):
+        found = False
+        for _format in _supported_formats:
+            if distfile.endswith(_format):
+                found = True
+        if not found:
+            raise DiffUnsupported('Invalid distfile type: %s' % distfile)
+
+    def validate_distfiles(self):
+        self._validate_distfile(self.src_distfile)
+        self._validate_distfile(self.dest_distfile)
 
     def fetch_distfiles(self):
         # TODO: fetch from distpatch.package, avoinding dupes

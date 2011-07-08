@@ -8,7 +8,7 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-from distpatch.diff import Diff
+from distpatch.diff import Diff, DiffUnsupported
 from distpatch.ebuild import Ebuild
 from distpatch.patch import Patch
 
@@ -102,6 +102,15 @@ class Package:
         for cpv in dbapi.match(atom):
             self.ebuilds[cpv] = Ebuild(cpv)
         self._lineage_identification()
+        _diffs = self.diffs[:]
+        self.diffs = []
+        for diff in _diffs:
+            try:
+                diff.validate_distfiles()
+            except DiffUnsupported:
+                pass
+            else:
+                self.diffs.append(diff)
 
     def patch(self, cpv, output_dir=None):
         if output_dir is None:
