@@ -139,8 +139,15 @@ class Package:
         self.patches.append(Patch(*hops))
 
     def fetch_distfiles(self):
+        _cache = OrderedDict()
         for diff in self.diffs:
-            diff.fetch_distfiles()
+            if diff.src_distfile not in _cache:
+                _cache[diff.src_distfile] = diff.src_ebuild
+            if diff.dest_distfile not in _cache:
+                _cache[diff.dest_distfile] = diff.dest_ebuild
+        for distfile in _cache:
+            _cache[distfile].fetch(distfile)
+
 
 # used by distdiffer --all
 cp_all = dbapi.cp_all

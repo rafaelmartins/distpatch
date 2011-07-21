@@ -95,8 +95,7 @@ def main():
             continue
         if args.verbose:
             print '    >>> Fetching distfiles:'
-        for diff in pkg.diffs:
-            diff.fetch_distfiles()
+        pkg.fetch_distfiles()
         if args.verbose:
             print '    >>> Generating deltas:'
         for diff in pkg.diffs:

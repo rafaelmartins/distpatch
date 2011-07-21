@@ -62,7 +62,7 @@ class Diff:
         self._validate_distfile(self.dest_distfile)
 
     def fetch_distfiles(self):
-        # TODO: fetch from distpatch.package, avoinding dupes
+        # please fetch from distpatch.package to avoid dupes
         self.src_ebuild.fetch(self.src_distfile)
         self.dest_ebuild.fetch(self.dest_distfile)
 
