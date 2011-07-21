@@ -76,23 +76,16 @@ class Package:
             self.diffs.append(diff)
             taken[diff.dest_distfile] = (avg, diff)
 
-    def _resolve_distfiles(self):
-        self.patches = []
-        patches_list = []
-        for distfile in self.ebuild.src_uri_map:
-            tmp = []
-            line = self.deltadb.get_by_dest(distfile)
-            while len(line) > 0:
-                if line[0].dest.fname in self._distfiles_list:
-                    break
-                tmp.append(line[0])
-                line = self.deltadb.get_by_dest(line[0].src.fname)
-            patches_list.append(tmp)
-        for records in patches_list:
-            if len(records) == 0:
-                continue
-            records = list(reversed(records))
-            self.patches.append(Patch(*records))
+    def _distfiles_list(self, output_dir):
+        if output_dir is None:
+            output_dir = portage.settings['DISTDIR']
+        distfiles_list = []
+        if os.path.isdir(output_dir):
+            distfiles_list += os.listdir(output_dir)
+        delta_dir = os.path.join(output_dir, 'delta-reconstructed')
+        if os.path.isdir(delta_dir):
+            distfiles_list += os.listdir(delta_dir)
+        return distfiles_list
 
     def diff(self, atom):
         self.ebuilds = OrderedDict()
@@ -110,16 +103,40 @@ class Package:
                 self.diffs.append(diff)
 
     def patch(self, cpv, output_dir=None):
-        if output_dir is None:
-            output_dir = portage.settings['DISTDIR']
-        self.ebuild = Ebuild(cpv)
-        self._distfiles_list = []
-        if os.path.isdir(output_dir):
-            self._distfiles_list += os.listdir(output_dir)
-        delta_dir = os.path.join(output_dir, 'delta-reconstructed')
-        if os.path.isdir(delta_dir):
-            self._distfiles_list += os.listdir(delta_dir)
-        self._resolve_distfiles()
+        self.patches = []
+        ebuild = Ebuild(cpv)
+        distfiles = self._distfiles_list(output_dir)
+        hops_list = []
+        for distfile in ebuild.src_uri_map:
+            hops = []
+            dbline = self.deltadb.get_by_dest(distfile)
+            while len(dbline) > 0:
+                if dbline[0].dest.fname in distfiles:
+                    break
+                hops.append(dbline[0])
+                dbline = self.deltadb.get_by_dest(dbline[0].src.fname)
+            hops.reverse()
+            if len(hops) > 0 and hops[0].src.fname in distfiles:
+                hops_list.append(hops)
+        for hops in hops_list:
+            if len(hops) > 0:
+                self.patches.append(Patch(*hops))
+        return self.patches
+
+    def patch_distfile(self, distfile, output_dir=None):
+        self.patches = []
+        distfiles = self._distfiles_list(output_dir)
+        hops = []
+        dbline = self.deltadb.get_by_dest(distfile)
+        while len(dbline) > 0:
+            if dbline[0].dest.fname in distfiles:
+                break
+            hops.append(dbline[0])
+            dbline = self.deltadb.get_by_dest(dbline[0].src.fname)
+        hops.reverse()
+        if len(hops) == 0 or hops[0].src.fname not in distfiles:
+            return []
+        self.patches.append(Patch(*hops))
 
     def fetch_distfiles(self):
         for diff in self.diffs:

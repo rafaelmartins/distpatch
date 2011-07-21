@@ -39,6 +39,8 @@ parser.add_argument('-c', '--no-compress', dest='no_compress',
                     'regenerated tarballs')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                     help='Enable verbose mode')
+parser.add_argument('--distfile', dest='distfile', action='store_true',
+                    help='Handle CPVs as distfile filenames')
 
 
 def main():
@@ -68,9 +70,15 @@ def main():
 
     for cpv in cpv_list:
         if args.verbose:
-            print '>>> CPV: %s' % cpv
+            if args.distfile:
+                print '>>> Distfile: %s' % cpv
+            else:
+                print '>>> CPV: %s' % cpv
         pkg = Package(db)
-        pkg.patch(cpv, args.output_dir)
+        if args.distfile:
+            pkg.patch_distfile(cpv, args.output_dir)
+        else:
+            pkg.patch(cpv, args.output_dir)
         if args.verbose:
             print '    >>> Deltas:'
             if len(pkg.patches) == 0:

@@ -3,6 +3,7 @@
 
 # Wing IDE project file
 *.wpr
+*.wpu
 
 # Test files
 *.db
