@@ -44,6 +44,8 @@ class Patch:
         urls = []
         for record in self.dbrecords:
             urls.append(posixpath.join(root_url, record.delta.fname))
+        if 'distpatch' in mysettings.features:
+            mysettings.features.remove('distpatch')
         if not fetch(urls, mysettings):
             raise PatchException('Failed to fetch deltas: %s' % urls)
 

@@ -50,6 +50,8 @@ class Ebuild:
                 raise EbuildException('Invalid distfile: %s' % myfile)
             files = OrderedDict()
             files[myfile] = available_files[myfile]
+        if 'distpatch' in mysettings.features:
+            mysettings.features.remove('distpatch')
         if not fetch(files, mysettings, allow_missing_digests=False):
             raise EbuildException('Failed to fetch distfiles for %s' % self.cpv)
 
