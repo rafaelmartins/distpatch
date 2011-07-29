@@ -135,7 +135,7 @@ class Package:
             dbline = self.deltadb.get_by_dest(dbline[0].src.fname)
         hops.reverse()
         if len(hops) == 0 or hops[0].src.fname not in distfiles:
-            return []
+            return
         self.patches.append(Patch(*hops))
 
     def fetch_distfiles(self):
