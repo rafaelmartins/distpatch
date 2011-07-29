@@ -40,7 +40,7 @@ parser.add_argument('-c', '--no-compress', dest='no_compress',
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                     help='Enable verbose mode')
 parser.add_argument('--distfile', dest='distfile', action='store_true',
-                    help='Handle CPVs as distfile filenames')
+                    help='Handle CPVs as distfile filenames instead of package CPVs')
 
 
 def main():
