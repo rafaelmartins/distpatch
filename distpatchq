@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# command-line query tool for distpatch, based on portageq
+
+# To add functionality to this tool, add a function below.
+#
+# The format for functions is:
+#
+#   def function(param1, param2, ...):
+#       """<description of the function>"""
+#       <code>
+#
+# you shouldn't use *args, as we need the names of the variables for build the
+# arguments list
+#
+# Make sure you document the function in the right format.  The documentation
+# is used to display help on the function.
+
+from distpatch.deltadb import DeltaDB as _DeltaDB
+from distpatch.package import Package as _Package
+
+import inspect as _inspect
+import os as _os
+import portage as _portage
+import sys as _sys
+
+
+def delta_fetch_size(pkg, filename, distfiles_dir=None, deltas_dir=None):
+    '''Returns the total fetch size of the available deltas to reconstruct
+    the given distfile.
+    '''
+    if distfiles_dir is None:
+        distfiles_dir = _portage.settings['DISTDIR']
+    if deltas_dir is None:
+        deltas_dir = _os.path.join(distfiles_dir, 'patches')
+    pkg.patch_distfile(filename, distfiles_dir)
+    if len(pkg.patches) == 0:
+        return 1
+    try:
+        deltas = _os.listdir(deltas_dir)
+    except OSError:
+        deltas = []
+    fetch_size = 0
+    for dbrecord in pkg.patches[0].dbrecords:
+        if dbrecord.delta.fname in deltas:
+            continue
+        fetch_size += int(dbrecord.delta.chksums['size'])
+    print fetch_size
+
+
+commands = sorted(i for i in globals().keys() if not i.startswith('_'))
+
+def usage(argv):
+    print '>>> distpatch information query tool'
+    print '>>> Usage: distpatchq <command> [<option> ...]'
+    print
+    print 'Available commands:'
+    help_mode = '--help' in argv
+    for name in commands:
+        function = globals()[name]
+        if function.__doc__ is None:
+            print '   ' + name
+            print '      MISSING DOCUMENTATION!'
+            print
+            continue
+
+        # introspect command arguments
+        args = ['<deltadb>']
+        spec = _inspect.getargspec(function)
+        opt = len(spec.defaults)
+        for arg in spec.args[1:-opt]:
+            args.append('<%s>' % arg)
+        for arg in spec.args[opt:]:
+            args.append('[%s]' % arg)
+        print '   ' + name + ' ' + ' '.join(args)
+        lines = function.__doc__.split('\n')
+        if len(argv) > 1:
+            for line in lines:
+                print "      " + line.strip()
+
+    if len(argv) == 1:
+        print "\nRun distpatchq with --help for info"
+
+if __name__ == '__main__':
+    if len(_sys.argv) < 2:
+        usage(_sys.argv)
+        _sys.exit(_os.EX_USAGE)
+
+    for x in _sys.argv:
+        if x in ('-h', '--help'):
+            usage(_sys.argv)
+            _sys.exit(_os.EX_OK)
+        cmd = _sys.argv[1]
+
+    function = globals().get(cmd)
+    if function is None or cmd not in commands:
+        usage(_sys.argv)
+        _sys.exit(_os.EX_USAGE)
+
+    spec = _inspect.getargspec(function)
+    opt = len(spec.defaults)
+    req = len(spec.args) - opt
+
+    if len(_sys.argv) < req + 2:
+        print "Invalid number of arguments!!"
+        _sys.exit(2)
+
+    dbfile = _sys.argv[2]
+    db = _DeltaDB(dbfile)
+    pkg = _Package(db)
+    args = [pkg] + _sys.argv[3:]
+
+    try:
+        retval = function(*args)
+        if retval:
+            _sys.exit(retval)
+    except:
+        pass
