@@ -5,7 +5,7 @@ import os
 from snakeoil.chksum import get_chksums, get_handler
 
 
-class ChksumError(Exception):
+class ChksumException(Exception):
     pass
 
 
@@ -21,18 +21,18 @@ class ChksumValue(object):
             return self.value
         elif isinstance(self.value, long):
             return self._handler.long2str(self.value)
-        raise ChksumError('Invalid value: %s' % self.value)
+        raise ChksumException('Invalid value: %s' % self.value)
 
     def to_long(self):
         if isinstance(self.value, long):
             return self.value
         elif isinstance(self.value, basestring):
             return self._handler.str2long(self.value)
-        raise ChksumError('Invalid value: %s' % self.value)
+        raise ChksumException('Invalid value: %s' % self.value)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
-            raise ChksumError('Invalid operand for %s: %r' % \
+            raise ChksumException('Invalid operand for %s: %r' % \
                               (self.__class__.__name__, other))
         return self.to_long() == other.to_long()
 
@@ -57,7 +57,7 @@ class Chksum(object):
         if fname is not None:
 
             if not os.path.exists(fname):
-                raise ChksumError('File not found: %s' % fname)
+                raise ChksumException('File not found: %s' % fname)
 
             values = get_chksums(fname, *self.algorithms)
             chksums = zip(self.algorithms, values)
@@ -70,16 +70,16 @@ class Chksum(object):
         tmp_algorithms = list(self.algorithms)
         for algorithm, chksum in chksums:
             if algorithm not in tmp_algorithms:
-                raise ChksumError('Invalid checksum algorithm: %s' % algorithm)
+                raise ChksumException('Invalid checksum algorithm: %s' % algorithm)
             setattr(self, algorithm, ChksumValue(algorithm, chksum))
             tmp_algorithms.remove(algorithm)
         if len(tmp_algorithms) > 0:
-            raise ChksumError('Missing checksums: %s' % \
+            raise ChksumException('Missing checksums: %s' % \
                               ', '.join(tmp_algorithms))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
-            raise ChksumError('Invalid operand for %s: %r' % \
+            raise ChksumException('Invalid operand for %s: %r' % \
                               (self.__class__.__name__, other))
         for algorithm in self.algorithms:
             a = getattr(self, algorithm)
