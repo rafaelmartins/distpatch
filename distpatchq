@@ -17,13 +17,20 @@
 # Make sure you document the function in the right format.  The documentation
 # is used to display help on the function.
 
-from distpatch.deltadb import DeltaDB as _DeltaDB
+from distpatch.deltadb import DeltaDB as _DeltaDB, DeltaDBFile as \
+     _DeltaDBFile
+from distpatch.helpers import uncompressed_filename_and_compressor as \
+     _uncompressed_filename_and_compressor
 from distpatch.package import Package as _Package
 
+import atexit as _atexit
 import inspect as _inspect
 import os as _os
 import portage as _portage
+import shutil as _shutil
+import subprocess as _subprocess
 import sys as _sys
+import tempfile as _tempfile
 
 
 def delta_fetch_size(pkg, filename, distfiles_dir=None, deltas_dir=None):
@@ -34,6 +41,9 @@ def delta_fetch_size(pkg, filename, distfiles_dir=None, deltas_dir=None):
         distfiles_dir = _portage.settings['DISTDIR']
     if deltas_dir is None:
         deltas_dir = _os.path.join(distfiles_dir, 'patches')
+    if filename in _os.listdir(_os.path.join(distfiles_dir, 'delta-reconstructed')):
+        print 0
+        return 0
     pkg.patch_distfile(filename, distfiles_dir)
     if len(pkg.patches) == 0:
         return 1
@@ -47,6 +57,30 @@ def delta_fetch_size(pkg, filename, distfiles_dir=None, deltas_dir=None):
             continue
         fetch_size += int(dbrecord.delta.chksums['size'])
     print fetch_size
+
+
+def delta_verify_checksums(pkg, filename, distfiles_dir=None):
+    '''Verify checksums for the given delta.'''
+    if distfiles_dir is None:
+        distfiles_dir = _portage.settings['DISTDIR']
+    records = pkg.deltadb.get_by_dest(filename)
+    if len(records) == 0:
+        return 1
+    dest = records[0].udest
+    compressed_src = _os.path.join(distfiles_dir, filename)
+    if not _os.path.exists(compressed_src):
+        return 2
+    tmpdir = _tempfile.mkdtemp()
+    _atexit.register(lambda x: _shutil.rmtree(x), tmpdir)
+    tmp_src = _os.path.join(tmpdir, _os.path.basename(compressed_src))
+    _shutil.copy2(compressed_src, tmp_src)
+    src, compressor = _uncompressed_filename_and_compressor(tmp_src)
+    rv = _subprocess.call([compressor, '-d', tmp_src])
+    if rv != _os.EX_OK:
+        return rv
+    if _DeltaDBFile(src) == dest:
+        return 0
+    return 3
 
 
 commands = sorted(i for i in globals().keys() if not i.startswith('_'))
@@ -116,4 +150,4 @@ if __name__ == '__main__':
         if retval:
             _sys.exit(retval)
     except:
-        pass
+        _sys.exit(-1)
