@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.chksums
+    ~~~~~~~~~~~~~~~~~
+
+    Module to deal with file checksums.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
 
 import os
 
@@ -70,7 +79,8 @@ class Chksum(object):
         tmp_algorithms = list(self.algorithms)
         for algorithm, chksum in chksums:
             if algorithm not in tmp_algorithms:
-                raise ChksumException('Invalid checksum algorithm: %s' % algorithm)
+                raise ChksumException('Invalid checksum algorithm: %s' % \
+                                      algorithm)
             setattr(self, algorithm, ChksumValue(algorithm, chksum))
             tmp_algorithms.remove(algorithm)
         if len(tmp_algorithms) > 0:
