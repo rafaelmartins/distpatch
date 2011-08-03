@@ -1,6 +1,29 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.helpers
+    ~~~~~~~~~~~~~~~~~
 
+    Helper functions for distpatch.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
+
+import atexit
 import os
+import shutil
+import tempfile
+
+from subprocess import call
+
+
+def tempdir(*args, **kwargs):
+    def cleanup(directory):
+        if os.path.isdir(directory):
+            shutil.rmtree(directory)
+    dirname = tempfile.mkdtemp(*args, **kwargs)
+    atexit.register(cleanup, dirname)
+    return dirname
 
 
 def uncompressed_filename_and_compressor(tarball):
@@ -21,6 +44,30 @@ def uncompressed_filename_and_compressor(tarball):
     if compressor is None:
         return tarball, None
     return dest + compressor[1], compressor[0]
+
+
+def uncompress(fname):
+    # extract to a temporary directory and move back, to keep both files:
+    # compressed and uncompressed.
+    base_src = os.path.basename(fname)
+    base_dest, compressor = uncompressed_filename_and_compressor(base_src)
+    tmp_dir = tempdir()
+    tmp_src = os.path.join(tmp_dir, base_src)
+    tmp_dest = os.path.join(tmp_dir, base_dest)
+    local_dir = os.path.dirname(os.path.abspath(fname))
+    local_src = os.path.join(local_dir, base_src)
+    local_dest = os.path.join(local_dir, base_dest)
+    shutil.copy2(local_src, tmp_src)
+    if compressor is not None:
+        rv = call([compressor, '-d', tmp_src])
+        if rv is not os.EX_OK:
+            raise RuntimeError('Failed to decompress file: %d' % rv)
+        if not os.path.exists(tmp_dest):
+            raise RuntimeError('Decompressed file not found: %s' % tmp_dest)
+    shutil.move(tmp_dest, local_dest)
+    # we do automatic cleanup, but we should remove it here to save disk space
+    shutil.rmtree(tmp_dir)
+    return local_dest
 
 
 def format_size(size):
