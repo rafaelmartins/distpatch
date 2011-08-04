@@ -74,8 +74,14 @@ class DeltaDBFile:
 
         # manual
         elif chksums is not None and uchksums is not None:
-            self.chksums = Chksum(**chksums)
-            self.uchksums = Chksum(**uchksums)
+            if isinstance(chksums, Chksum):
+                self.chksums = chksums
+            else:
+                self.chksums = Chksum(**chksums)
+            if isinstance(uchksums, Chksum):
+                self.uchksums = uchksums
+            else:
+                self.uchksums = Chksum(**uchksums)
 
         else:
             raise DeltaDBException('You need to provide both dictionaries ' \

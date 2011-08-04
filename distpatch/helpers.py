@@ -59,7 +59,7 @@ def uncompress(fname):
     local_dest = os.path.join(local_dir, base_dest)
     shutil.copy2(local_src, tmp_src)
     if compressor is not None:
-        rv = call([compressor, '-d', tmp_src])
+        rv = call([compressor, '-fd', tmp_src])
         if rv is not os.EX_OK:
             raise RuntimeError('Failed to decompress file: %d' % rv)
         if not os.path.exists(tmp_dest):

@@ -6,7 +6,7 @@ import portage
 from snakeoil.mappings import OrderedDict
 
 from distpatch.diff import Diff, DiffUnsupported
-from distpatch.ebuild import Ebuild
+from distpatch.ebuild import Distfile, Ebuild
 from distpatch.patch import Patch
 
 dbapi = portage.db[portage.settings['ROOT']]['porttree'].dbapi
@@ -61,8 +61,10 @@ class Package:
                         avg_ebuild = dest_ebuild
                         max_avg = avg
                 if avg_distfile is not None and src_distfile != avg_distfile:
-                    diffs.append((max_avg, Diff(src_distfile, src_ebuild,
-                                                avg_distfile, avg_ebuild)))
+                    diffs.append((max_avg, Diff(Distfile(src_distfile,
+                                                         src_ebuild),
+                                                Distfile(avg_distfile,
+                                                         avg_ebuild))))
         for avg, diff in diffs:
             if diff.dest_distfile in taken:
                 if taken[diff.dest_distfile][0] > avg:

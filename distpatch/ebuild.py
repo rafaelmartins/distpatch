@@ -14,7 +14,11 @@ class EbuildException(Exception):
     pass
 
 
-class Ebuild:
+class DistfileException(Exception):
+    pass
+
+
+class Ebuild(object):
 
     def __init__(self, cpv):
         if not dbapi.cpv_exists(cpv):
@@ -57,3 +61,20 @@ class Ebuild:
 
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.cpv)
+
+
+class Distfile(object):
+
+    def __init__(self, fname, ebuild):
+        self.fname = os.path.basename(fname)
+        if not isinstance(ebuild, Ebuild):
+            raise DistfileException('Invalid %s object: %r' % \
+                                    (Ebuild.__name__, ebuild))
+        self.ebuild = ebuild
+
+    def fetch(self):
+        self.ebuild.fetch(self.fname)
+
+    def __repr__(self):
+        return '<%s %s from %s>' % (self.__class__.__name__, self.fname,
+                                    self.ebuild)

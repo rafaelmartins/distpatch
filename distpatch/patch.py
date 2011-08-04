@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.patch
+    ~~~~~~~~~~~~~~~
+
+    Basic stuff to reconstruct files from deltas.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
 
 import os
 import portage
@@ -10,7 +19,8 @@ from portage.package.ebuild.fetch import fetch
 from shutil import move
 from subprocess import call
 
-from distpatch.deltadb import DeltaDBFile
+from distpatch.chksums import Chksum
+from distpatch.deltadb import DeltaDBFile, DeltaDBRecord
 from distpatch.helpers import uncompressed_filename_and_compressor
 
 re_diff_filename = re.compile(r'(?P<dest>.+)\.(?P<format>[^(\.xz)]+)(\.xz)?$')
@@ -23,20 +33,29 @@ class PatchException(Exception):
 class Patch:
 
     def __init__(self, *dbrecords):
+
+        # validate dbrecords
         if len(dbrecords) == 0:
-            raise PatchException('Patch requires an argument')
+            raise PatchException('%s requires 1 or more %s objects as ' \
+                                 'arguments' % (self.__class__.__name__,
+                                                DeltaDBRecord.__name__))
+        for record in dbrecords:
+            if not isinstance(record, DeltaDBRecord):
+                raise PatchException('Invalid argument for %s: %r' % \
+                                     (self.__class__.__name__, record))
+
         self.dbrecords = dbrecords
-        self.src = dbrecords[0].src
-        self.dest = dbrecords[-1].dest
-        self.udest = dbrecords[-1].udest
+        self.src = self.dbrecords[0].src
+        self.dest = self.dbrecords[-1].dest
         if not self._verify_deltas():
-            raise PatchException('Invalid delta sequence: %s' % self.dbrecords)
+            raise PatchException('Invalid delta series: %s' % self.dbrecords)
 
     def fetch_deltas(self, output_dir=None):
         # mirror://gentoo/ will fail for now... portage needs a patch
         root_url = os.environ.get('DELTAS_ROOT_URL', 'mirror://gentoo')
         if root_url == 'mirror://gentoo':
-            raise PatchException('You should set the environment variable DELTAS_ROOT_URL.')
+            raise PatchException('You should set the environment variable ' \
+                                 'DELTAS_ROOT_URL.')
         if output_dir is None:
             output_dir = os.path.join(portage.settings['DISTDIR'], 'patches')
         mysettings = portage.config(clone=portage.settings)
@@ -55,7 +74,7 @@ class Patch:
             rv = re_diff_filename.match(record.delta.fname)
             if rv is None:
                 return False
-            patch_format = rv.groupdict()['format']
+            patch_format = rv.groupdict().get('format')
             if self.patch_format is None:
                 self.patch_format = patch_format
                 continue
@@ -66,48 +85,51 @@ class Patch:
     def reconstruct(self, input_dir=None, output_dir=None, compress=True):
         diffball_bindir = os.environ.get('DIFFBALL_BINDIR', '/usr/bin')
         patcher = os.path.join(diffball_bindir, 'patcher')
-
         distdir = portage.settings['DISTDIR']
         if input_dir is None:
             input_dir = os.path.join(distdir, 'patches')
         if output_dir is None:
             output_dir = distdir
-        src = os.path.join(distdir, os.path.basename(self.src.fname))
+        src = os.path.join(distdir, self.src.fname)
         dest, compressor = uncompressed_filename_and_compressor(
-            os.path.basename(self.dest.fname))
+            self.dest.fname)
         dest = os.path.join(output_dir, dest)
-        deltas = [os.path.join(input_dir, os.path.basename(i.delta.fname)) \
+        deltas = [os.path.join(input_dir, i.delta.fname) \
                   for i in self.dbrecords]
 
         # validate source and deltas before recompose
         if self.src != DeltaDBFile(src):
-            raise PatchException('Bad checksum for source: %s' % self.src.fname)
+            raise PatchException('Bad checksum for source: %s' % \
+                                 self.src.fname)
         for delta, delta_record in izip(deltas, self.dbrecords):
             if delta_record.delta != DeltaDBFile(delta):
                 raise PatchException('Bad checksum for delta: %s' % \
                                      delta_record.delta.fname)
 
-        cmd = [patcher, src, '--patch-format', self.patch_format] + deltas
+        # recompose :)
+        cmd = [patcher, src, '--patch-format', self.patch_format]
+        cmd.extend(deltas)
         cmd.append(dest)
-
         if call(cmd) != os.EX_OK:
             raise PatchException('Failed to reconstruct file: %s' % dest)
 
         # validate checksums for uncompressed destination
-        if self.udest != DeltaDBFile(dest):
-            raise PatchException('Bad checksum for uncompressed destination: %s' % \
-                                 self.dest.fname)
+        if self.dest.uchksums != Chksum(dest):
+            raise PatchException(
+                'Bad checksum for uncompressed destination: %s' % \
+                self.dest.fname)
 
+        # compress the destination file, if needed.
         if compress and compressor is not None:
             if call([compressor, dest]) != os.EX_OK:
-                raise PatchException('Failed to compress reconstructed file: %s' % \
-                                     dest)
+                raise PatchException(
+                    'Failed to compress reconstructed file: %s' % dest)
             dest += os.path.splitext(self.dest.fname)[1]
-            if self.dest != DeltaDBFile(dest):
+            if self.dest.chksums != Chksum(dest):
                 invalid_dir = os.path.join(output_dir, 'delta-reconstructed')
                 if not os.path.exists(invalid_dir):
                     os.makedirs(invalid_dir)
-                move(dest, os.path.join(invalid_dir, os.path.basename(dest)))
+                move(dest, invalid_dir)
         self.dest_distfile = dest
 
     def __str__(self):
