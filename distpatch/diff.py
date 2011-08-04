@@ -4,6 +4,7 @@ import os
 import portage
 
 from shutil import copy2, rmtree
+from snakeoil.chksum import get_chksums
 from subprocess import call
 
 from distpatch.chksums import Chksum
@@ -47,13 +48,24 @@ class Diff:
         self.dest = dest
 
     def validate_distfiles(self):
+
         def validate(distfile):
+
+            # validate format
             found = False
             for _format in _supported_formats:
                 if distfile.endswith(_format):
                     found = True
             if not found:
                 raise DiffUnsupported('Invalid distfile type: %s' % distfile)
+
+            # validate size (XXX: Improve this. Make the max size a config opt)
+            distfile_path = os.path.join(portage.settings['DISTDIR'],
+                                         distfile)
+            size = get_chksums(distfile_path, 'size')[0]
+            if size > (300 * 1024 * 1024):  # 300MB
+                raise DiffUnsupported('Invalid distfile size: %s' % distfile)
+
         validate(self.src.fname)
         validate(self.dest.fname)
 
