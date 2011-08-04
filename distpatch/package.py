@@ -66,17 +66,17 @@ class Package:
                                                 Distfile(avg_distfile,
                                                          avg_ebuild))))
         for avg, diff in diffs:
-            if diff.dest_distfile in taken:
-                if taken[diff.dest_distfile][0] > avg:
+            if diff.dest.fname in taken:
+                if taken[diff.dest.fname][0] > avg:
                     continue
                 else:
                     tmp_diffs = []
                     for tmp_diff in self.diffs:
-                        if tmp_diff.dest_distfile != diff.dest_distfile:
+                        if tmp_diff.dest.fname != diff.dest.fname:
                             tmp_diffs.append(tmp_diff)
                     self.diffs = tmp_diffs
             self.diffs.append(diff)
-            taken[diff.dest_distfile] = (avg, diff)
+            taken[diff.dest.fname] = (avg, diff)
 
     def _distfiles_list(self, output_dir):
         if output_dir is None:
@@ -141,14 +141,14 @@ class Package:
         self.patches.append(Patch(*hops))
 
     def fetch_distfiles(self):
-        _cache = OrderedDict()
+        fetched = []
         for diff in self.diffs:
-            if diff.src_distfile not in _cache:
-                _cache[diff.src_distfile] = diff.src_ebuild
-            if diff.dest_distfile not in _cache:
-                _cache[diff.dest_distfile] = diff.dest_ebuild
-        for distfile in _cache:
-            _cache[distfile].fetch(distfile)
+            if diff.src.fname not in fetched:
+                diff.src.fetch()
+                fetched.append(diff.src.fname)
+            if diff.dest.fname not in fetched:
+                diff.dest.fetch()
+                fetched.append(diff.dest.fname)
 
 
 # used by distdiffer --all

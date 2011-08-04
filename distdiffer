@@ -89,8 +89,8 @@ def main():
                 print '        None\n'
             else:
                 for diff in pkg.diffs:
-                    print '        %s -> %s' % (diff.src_distfile,
-                                                diff.dest_distfile)
+                    print '        %s -> %s' % (diff.src.fname,
+                                                diff.dest.fname)
         if len(pkg.diffs) == 0:
             continue
         if args.verbose:
@@ -100,8 +100,8 @@ def main():
             print '    >>> Generating deltas:'
         for diff in pkg.diffs:
             if args.verbose:
-                sys.stdout.write('        %s -> %s ... ' % (diff.src_distfile,
-                                                            diff.dest_distfile))
+                sys.stdout.write('        %s -> %s ... ' % (diff.src.fname,
+                                                            diff.dest.fname))
                 sys.stdout.flush()
             try:
                 diff.generate(args.output_dir, not args.preserve,

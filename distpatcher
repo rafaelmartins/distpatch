@@ -111,7 +111,7 @@ def main():
                 if args.verbose:
                     print 'done!'
                     print '            %s' % \
-                          os.path.basename(patch.dest_distfile)
+                          os.path.basename(patch.dest.fname)
         if args.verbose:
             print
 

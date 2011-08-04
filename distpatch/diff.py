@@ -54,8 +54,8 @@ class Diff:
                     found = True
             if not found:
                 raise DiffUnsupported('Invalid distfile type: %s' % distfile)
-        validate(self.src_distfile)
-        validate(self.dest_distfile)
+        validate(self.src.fname)
+        validate(self.dest.fname)
 
     def fetch_distfiles(self):
         # please fetch from distpatch.package to avoid dupes
