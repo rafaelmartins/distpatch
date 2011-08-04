@@ -18,8 +18,7 @@
 # is used to display help on the function.
 
 from distpatch.chksums import Chksum as _Chksum
-from distpatch.deltadb import DeltaDB as _DeltaDB, DeltaDBFile as \
-     _DeltaDBFile
+from distpatch.deltadb import DeltaDB as _DeltaDB
 from distpatch.helpers import tempdir as _tempdir, uncompress as _uncompress
 from distpatch.package import Package as _Package
 
@@ -27,9 +26,7 @@ import inspect as _inspect
 import os as _os
 import portage as _portage
 import shutil as _shutil
-import subprocess as _subprocess
 import sys as _sys
-import tempfile as _tempfile
 
 
 def delta_fetch_size(pkg, filename, distfiles_dir=None, deltas_dir=None):
@@ -101,12 +98,12 @@ def delta_verify_checksums(pkg, filename, distfiles_dir=None):
 
 commands = sorted(i for i in globals().keys() if not i.startswith('_'))
 
+
 def usage(argv):
     print '>>> distpatch information query tool'
     print '>>> Usage: distpatchq <command> [<option> ...]'
     print
     print 'Available commands:'
-    help_mode = '--help' in argv
     for name in commands:
         function = globals()[name]
         if function.__doc__ is None:
