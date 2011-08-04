@@ -46,7 +46,7 @@ def uncompressed_filename_and_compressor(tarball):
     return dest + compressor[1], compressor[0]
 
 
-def uncompress(fname):
+def uncompress(fname, output_dir=None):
     # extract to a temporary directory and move back, to keep both files:
     # compressed and uncompressed.
     base_src = os.path.basename(fname)
@@ -56,7 +56,10 @@ def uncompress(fname):
     tmp_dest = os.path.join(tmp_dir, base_dest)
     local_dir = os.path.dirname(os.path.abspath(fname))
     local_src = os.path.join(local_dir, base_src)
-    local_dest = os.path.join(local_dir, base_dest)
+    if output_dir is None:
+        local_dest = os.path.join(local_dir, base_dest)
+    else:
+        local_dest = os.path.join(output_dir, base_dest)
     shutil.copy2(local_src, tmp_src)
     if compressor is not None:
         rv = call([compressor, '-fd', tmp_src])

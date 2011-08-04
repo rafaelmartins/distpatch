@@ -90,8 +90,8 @@ class Diff:
         dest = os.path.join(output_dir, self.dest.fname)
         copy2(os.path.join(distdir, self.src.fname), src)
         copy2(os.path.join(distdir, self.dest.fname), dest)
-        usrc = uncompress(src)
-        udest = uncompress(dest)
+        usrc = uncompress(src, output_dir)
+        udest = uncompress(dest, output_dir)
 
         # building delta filename
         self.diff_file = os.path.join(output_dir,
