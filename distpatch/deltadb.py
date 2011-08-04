@@ -39,12 +39,14 @@ import codecs
 import os
 
 from itertools import izip
+from shutil import rmtree
 from snakeoil.chksum import get_handler
 from snakeoil.fileutils import AtomicWriteFile
 from snakeoil.mappings import OrderedDict
 
 from distpatch.chksums import Chksum
-from distpatch.helpers import uncompress, uncompressed_filename_and_compressor
+from distpatch.helpers import tempdir, uncompress, \
+     uncompressed_filename_and_compressor
 
 
 class DeltaDBException(Exception):
@@ -66,11 +68,12 @@ class DeltaDBFile:
             # calculate decompressed checksums
             remove_uncompressed = False
             if ufname is None:
-                ufname = uncompress(fname)
+                tmp_dir = tempdir()
+                ufname = uncompress(fname, tmp_dir)
                 remove_uncompressed = True
             self.uchksums = Chksum(ufname)
             if remove_uncompressed:
-                os.unlink(ufname)
+                rmtree(tmp_dir)
 
         # manual
         elif chksums is not None and uchksums is not None:

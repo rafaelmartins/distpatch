@@ -114,7 +114,7 @@ class Diff:
         if call(cmd) != os.EX_OK:
             raise DiffException('Failed to generate diff: %s' % self.diff_file)
 
-        # svalidation of delta
+        # validation of delta
         tmp_dir = tempdir()
         copy2(usrc, tmp_dir)
         copy2(self.diff_file, tmp_dir)
