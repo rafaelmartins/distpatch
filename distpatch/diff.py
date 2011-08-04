@@ -106,7 +106,7 @@ class Diff:
             if clean_sources:
                 os.unlink(usrc)
                 os.unlink(udest)
-            self.diff_file += '.xz'
+            self.diff_file = diff_indisk
             raise DiffExists
 
         cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
