@@ -79,7 +79,10 @@ def main():
         if args.verbose:
             print '>>> Package: %s' % package
         pkg = Package(db)
-        pkg.diff(package)
+        try:
+            pkg.diff(package)
+        except Exception, err:
+            print >> sys.stderr, str(err)
         if args.verbose:
             print '    >>> Versions:'
             for cpv in pkg.ebuilds:
@@ -95,7 +98,12 @@ def main():
             continue
         if args.verbose:
             print '    >>> Fetching distfiles:'
-        pkg.fetch_distfiles()
+        try:
+            pkg.fetch_distfiles()
+        except Exception, err:
+            print >> sys.stderr, str(err)
+            print
+            continue
         if args.verbose:
             print '    >>> Generating deltas:'
         for diff in pkg.diffs:
