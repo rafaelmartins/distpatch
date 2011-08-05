@@ -2,6 +2,7 @@
 
 import os
 import portage
+import shutil
 
 from shutil import copy2, rmtree
 from snakeoil.chksum import get_chksums
@@ -38,6 +39,7 @@ _supported_formats = [
 class Diff:
 
     patch_format = 'switching'
+    _cleanup = []
 
     def __init__(self, src, dest):
         if not isinstance(src, Distfile):
@@ -103,9 +105,13 @@ class Diff:
         src = os.path.join(output_dir, self.src.fname)
         dest = os.path.join(output_dir, self.dest.fname)
         copy2(os.path.join(distdir, self.src.fname), src)
+        clean_sources and self.cleanup_register(src)
         copy2(os.path.join(distdir, self.dest.fname), dest)
+        clean_sources and self.cleanup_register(dest)
         usrc = uncompress(src, output_dir)
+        clean_sources and self.cleanup_register(usrc)
         udest = uncompress(dest, output_dir)
+        clean_sources and self.cleanup_register(udest)
 
         cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
                self.diff_file]
@@ -115,6 +121,7 @@ class Diff:
 
         # validation of delta
         tmp_dir = tempdir()
+        clean_sources and self.cleanup_register(tmp_dir)
         copy2(usrc, tmp_dir)
         copy2(self.diff_file, tmp_dir)
         uchksums = Chksum(self.diff_file)
@@ -138,10 +145,6 @@ class Diff:
             patch.reconstruct(output_dir, tmp_dir, False)
         except PatchException, err:
             if clean_sources:
-                os.unlink(src)
-                os.unlink(dest)
-                os.unlink(usrc)
-                os.unlink(udest)
                 os.unlink(self.diff_file)
             raise DiffException('Delta reconstruction failed: %s' % str(err))
 
@@ -152,6 +155,18 @@ class Diff:
             os.unlink(dest)
             os.unlink(usrc)
             os.unlink(udest)
+
+    def cleanup_register(self, dir_or_file):
+        self._cleanup.append(dir_or_file)
+
+    def cleanup(self):
+        for c in self._cleanup:
+            if os.path.exists(c):
+                if os.path.isdir(c):
+                    shutil.rmtree(c)
+                else:
+                    os.unlink(c)
+        self._cleanup = []
 
     def __repr__(self):
         return '<%s %s -> %s>' % (self.__class__.__name__, self.src.fname,

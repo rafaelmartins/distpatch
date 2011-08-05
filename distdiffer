@@ -127,6 +127,7 @@ def main():
                     print 'done!'
                     print '            %s' % os.path.basename(diff.diff_file)
                 db.add(diff.dbrecord)
+            diff.cleanup()
         if args.verbose:
             print
 
