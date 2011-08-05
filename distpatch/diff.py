@@ -83,22 +83,13 @@ class Diff:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        distdir = portage.settings['DISTDIR']
-
-        # copy files to output dir and uncompress
-        src = os.path.join(output_dir, self.src.fname)
-        dest = os.path.join(output_dir, self.dest.fname)
-        copy2(os.path.join(distdir, self.src.fname), src)
-        copy2(os.path.join(distdir, self.dest.fname), dest)
-        usrc = uncompress(src, output_dir)
-        udest = uncompress(dest, output_dir)
-
         # building delta filename
         self.diff_file = os.path.join(output_dir,
                                       '%s-%s.%s' % (self.src.fname,
                                                     self.dest.fname,
                                                     self.patch_format))
 
+        # check if delta already exists
         diff_indisk = self.diff_file[:]
         if compress:
             diff_indisk += '.xz'
@@ -108,6 +99,16 @@ class Diff:
                 os.unlink(udest)
             self.diff_file = diff_indisk
             raise DiffExists
+
+        distdir = portage.settings['DISTDIR']
+
+        # copy files to output dir and uncompress
+        src = os.path.join(output_dir, self.src.fname)
+        dest = os.path.join(output_dir, self.dest.fname)
+        copy2(os.path.join(distdir, self.src.fname), src)
+        copy2(os.path.join(distdir, self.dest.fname), dest)
+        usrc = uncompress(src, output_dir)
+        udest = uncompress(dest, output_dir)
 
         cmd = [differ, usrc, udest, '--patch-format', self.patch_format,
                self.diff_file]
