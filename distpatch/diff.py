@@ -94,9 +94,6 @@ class Diff:
         if compress:
             diff_indisk += '.xz'
         if os.path.exists(diff_indisk) and not force:
-            if clean_sources:
-                os.unlink(usrc)
-                os.unlink(udest)
             self.diff_file = diff_indisk
             raise DiffExists
 
