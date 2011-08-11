@@ -16,7 +16,7 @@ from portage.dbapi.porttree import _parse_uri_map
 from portage.package.ebuild.fetch import fetch
 from snakeoil.mappings import OrderedDict
 
-dbapi = portage.db[portage.settings['ROOT']]['porttree'].dbapi
+dbapi = portage.create_trees()[portage.settings['ROOT']]['porttree'].dbapi
 
 
 class EbuildException(Exception):

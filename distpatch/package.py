@@ -18,7 +18,7 @@ from distpatch.diff import Diff, DiffUnsupported
 from distpatch.ebuild import Distfile, Ebuild
 from distpatch.patch import Patch
 
-dbapi = portage.db[portage.settings['ROOT']]['porttree'].dbapi
+dbapi = portage.create_trees()[portage.settings['ROOT']]['porttree'].dbapi
 
 
 class PackageException(Exception):
