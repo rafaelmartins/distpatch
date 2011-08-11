@@ -12,3 +12,7 @@
 *.tgz
 *.bz2
 *.tbz2
+
+# dist
+distpatch.egg-info/
+dist/
