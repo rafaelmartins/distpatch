@@ -57,7 +57,7 @@ class UncompressedOk(Exception):
     pass
 
 
-class DeltaDBFile:
+class DeltaDBFile(object):
 
     def __init__(self, fname, ufname=None, chksums=None, uchksums=None):
 
@@ -114,7 +114,7 @@ class DeltaDBFile:
                                   self.ufname)
 
 
-class DeltaDBRecord:
+class DeltaDBRecord(object):
 
     def __init__(self, src, dest, delta):
         if not isinstance(src, DeltaDBFile):

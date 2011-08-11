@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.stats
+    ~~~~~~~~~~~~~~~
+
+    Module to generate plots for basic stats. Unused for now.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
 
 from matplotlib import pyplot
 
@@ -6,7 +15,7 @@ from distpatch.deltadb import DeltaDB
 from distpatch.helpers import format_size
 
 
-class Stats:
+class Stats(object):
 
     def __init__(self, deltadb_file):
         self.deltadb = sorted(DeltaDB(deltadb_file), self._cmp)

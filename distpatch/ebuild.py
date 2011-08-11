@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.ebuild
+    ~~~~~~~~~~~~~~~~
+
+    Module to abstract ebuild/distfile interfaces.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
 
 import os
 import portage

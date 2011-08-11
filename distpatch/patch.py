@@ -30,7 +30,7 @@ class PatchException(Exception):
     pass
 
 
-class Patch:
+class Patch(object):
 
     def __init__(self, *dbrecords):
 

@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    distpatch.package
+    ~~~~~~~~~~~~~~~~~
+
+    High-level interface for delta generation and distfile reconstruction.
+
+    :copyright: (c) 2011 by Rafael Goncalves Martins
+    :license: GPL-2, see LICENSE for more details.
+"""
 
 import os
 import portage
@@ -16,7 +25,7 @@ class PackageException(Exception):
     pass
 
 
-class Package:
+class Package(object):
 
     def __init__(self, deltadb):
         self.deltadb = deltadb
