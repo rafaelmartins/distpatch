@@ -27,6 +27,9 @@ parser.add_argument('-o', '--output', dest='output_dir', metavar='DIR',
                     help='Output directory (default: $DISTDIR, compressed ' \
                     'distfiles with unmatching checksums are saved at ' \
                     '$DISTDIR/delta-reconstructed)')
+parser.add_argument('-r', '--root-url', dest='root_url', metavar='URL',
+                    help='URL of the mirror to fetch the binary deltas',
+                    required=True)
 parser.add_argument('-f', '--file', dest='cpv_file', metavar='FILE',
                     help='Read package CPVs from a line-separated file. ' \
                     'This option will ignore `CPV` arguments')
@@ -92,7 +95,7 @@ def main():
         if args.verbose:
             print '    >>> Fetching deltas:'
         for patch in pkg.patches:
-            patch.fetch_deltas(args.input_dir)
+            patch.fetch_deltas(args.root_url, args.input_dir)
         if args.verbose:
             print '    >>> Reconstructing distfiles:'
         for patch in pkg.patches:

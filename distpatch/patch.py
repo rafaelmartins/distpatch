@@ -50,12 +50,7 @@ class Patch(object):
         if not self._verify_deltas():
             raise PatchException('Invalid delta series: %s' % self.dbrecords)
 
-    def fetch_deltas(self, output_dir=None):
-        # mirror://gentoo/ will fail for now... portage needs a patch
-        root_url = os.environ.get('DELTAS_ROOT_URL', 'mirror://gentoo')
-        if root_url == 'mirror://gentoo':
-            raise PatchException('You should set the environment variable ' \
-                                 'DELTAS_ROOT_URL.')
+    def fetch_deltas(self, root_url, output_dir=None):
         if output_dir is None:
             output_dir = os.path.join(portage.settings['DISTDIR'], 'patches')
         mysettings = portage.config(clone=portage.settings)
