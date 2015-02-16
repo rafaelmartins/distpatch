@@ -38,6 +38,7 @@
 import codecs
 import os
 
+from fcntl import lockf, LOCK_EX, LOCK_UN
 from itertools import izip
 from shutil import rmtree
 from snakeoil.chksum import get_handler
@@ -160,6 +161,9 @@ class DeltaDB(list):
 
     def __init__(self, fname):
         self.fname = fname
+        self._init()
+
+    def _init(self):
         list.__init__(self)
         self._parse_db()
 
@@ -230,13 +234,25 @@ class DeltaDB(list):
         return rv
 
     def add(self, record):
-        taken = []
-        for i in range(len(self)):
-            if os.path.basename(record.delta.fname) == self[i].delta.fname:
-                taken.append(i)
-        for i in taken:
-            del self[i]
-        self.append(record)
-        fp = AtomicWriteFile(self.fname)
-        fp.write('\n--\n'.join(map(str, self)))
-        fp.close()
+        # locking, because this should be as atomic as possible
+        lock_file = '%s.lock' % self.fname
+        with open(lock_file, 'w') as lock_fp:
+            lockf(lock_fp, LOCK_EX)
+            try:  # this makes sure that the lock is released if something bad happens
+                self._init()  # refresh the object to make sure that we have latest data
+                taken = []
+                for i in range(len(self)):
+                    if os.path.basename(record.delta.fname) == self[i].delta.fname:
+                        taken.append(i)
+                for i in taken:
+                    del self[i]
+                self.append(record)
+                fp = AtomicWriteFile(self.fname)
+                fp.write('\n--\n'.join(map(str, self)))
+                fp.close()
+            finally:
+                lockf(lock_fp, LOCK_UN)
+                try:
+                    os.remove(lock_file)
+                except:
+                    pass

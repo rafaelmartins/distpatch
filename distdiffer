@@ -5,12 +5,12 @@ import argparse
 import os
 import sys
 
+os.environ['ACCEPT_KEYWORDS'] = '**'
+
 from distpatch.deltadb import DeltaDB
 from distpatch.diff import DiffExists
 from distpatch.package import Package, cp_all
 
-
-os.environ.setdefault('ACCEPT_KEYWORDS', '**')
 
 parser = argparse.ArgumentParser(
     description='Creates binary deltas for distfiles of Gentoo Linux packages')
