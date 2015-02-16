@@ -151,7 +151,7 @@ class DeltaDBRecord(object):
             self._format_checksum(self.dest),
             self._format_checksum(self.delta),
         ]
-        return os.linesep.join(rv)
+        return '\n'.join(rv)
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.delta.fname)
@@ -186,15 +186,13 @@ class DeltaDB(list):
         if not os.path.exists(self.fname):
             return
 
-        separator = '%s--%s' % (os.linesep, os.linesep)
-
         # doing this without memory usage in mind, should fix
         records = []
         with codecs.open(self.fname, encoding='utf-8') as fp:
-            records = [i.strip() for i in fp.read().split(separator)]
+            records = [i.strip() for i in fp.read().split('\n--\n')]
 
         for record in records:
-            record = record.split(os.linesep)
+            record = record.split('\n')
 
             # first line is just the diff filename
             delta_name = record[0]
