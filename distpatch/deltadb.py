@@ -186,10 +186,12 @@ class DeltaDB(list):
         if not os.path.exists(self.fname):
             return
 
+        separator = '%s--%s' % (os.linesep, os.linesep)
+
         # doing this without memory usage in mind, should fix
         records = []
         with codecs.open(self.fname, encoding='utf-8') as fp:
-            records = [i.strip() for i in fp.read().split('--')]
+            records = [i.strip() for i in fp.read().split(separator)]
 
         for record in records:
             record = record.split(os.linesep)
