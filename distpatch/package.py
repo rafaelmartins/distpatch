@@ -12,7 +12,7 @@
 import os
 import portage
 
-from snakeoil.mappings import OrderedDict
+from collections import OrderedDict
 
 from distpatch.diff import Diff, DiffUnsupported
 from distpatch.ebuild import Distfile, Ebuild

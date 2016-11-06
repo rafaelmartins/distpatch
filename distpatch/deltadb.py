@@ -38,12 +38,12 @@
 import codecs
 import os
 
+from collections import OrderedDict
 from fcntl import lockf, LOCK_EX, LOCK_UN
 from itertools import izip
 from shutil import rmtree
 from snakeoil.chksum import get_handler
 from snakeoil.fileutils import AtomicWriteFile
-from snakeoil.mappings import OrderedDict
 
 from distpatch.chksums import Chksum
 from distpatch.helpers import tempdir, uncompress, \
