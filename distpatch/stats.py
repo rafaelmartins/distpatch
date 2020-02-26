@@ -48,7 +48,7 @@ class Stats(object):
             delta = float(record.delta.chksums['size'])
             dest = float(record.dest.chksums['size'])
             ratio.append(100 - ((delta / dest) * 100))
-        pyplot.plot(range(1, len(ratio) + 1), sorted(ratio))
+        pyplot.plot(list(range(1, len(ratio) + 1)), sorted(ratio))
         pyplot.axes()
         pyplot.xlabel('Deltas (total: %i)' % len(ratio))
         pyplot.ylabel('Percentage of savings (for compressed files)')
@@ -60,6 +60,6 @@ class Stats(object):
         for record in self.deltadb:
             dest.append(int(record.dest.chksums['size']))
             delta.append(int(record.delta.chksums['size']))
-        pyplot.plot(range(len(dest)), dest)
-        pyplot.plot(range(len(delta)), delta)
+        pyplot.plot(list(range(len(dest))), dest)
+        pyplot.plot(list(range(len(delta))), delta)
         pyplot.show()

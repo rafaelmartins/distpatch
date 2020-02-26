@@ -37,11 +37,11 @@ class DiffUnsupported(Exception):
 
 
 _supported_formats = [
-    u'.tar',
-    u'.tar.gz', u'.tgz', u'.gz',
-    u'.tar.bz2', u'.tbz2', u'.bz2',
-    u'.tar.xz', u'.xz',
-    u'.tar.lzma', u'.ĺzma',
+    '.tar',
+    '.tar.gz', '.tgz', '.gz',
+    '.tar.bz2', '.tbz2', '.bz2',
+    '.tar.xz', '.xz',
+    '.tar.lzma', '.ĺzma',
 ]
 
 
@@ -152,7 +152,7 @@ class Diff(object):
         try:
             patch = Patch(self.dbrecord)
             patch.reconstruct(output_dir, tmp_dir, False)
-        except PatchException, err:
+        except PatchException as err:
             if clean_sources:
                 os.unlink(self.diff_file)
             raise DiffException('Delta reconstruction failed: %s' % str(err))

@@ -69,35 +69,35 @@ def main():
         return
 
     if args.verbose:
-        print '>>> Starting distpatcher ...\n'
+        print('>>> Starting distpatcher ...\n')
 
     for cpv in cpv_list:
         if args.verbose:
             if args.distfile:
-                print '>>> Distfile: %s' % cpv
+                print('>>> Distfile: %s' % cpv)
             else:
-                print '>>> CPV: %s' % cpv
+                print('>>> CPV: %s' % cpv)
         pkg = Package(db)
         if args.distfile:
             pkg.patch_distfile(cpv, args.output_dir)
         else:
             pkg.patch(cpv, args.output_dir)
         if args.verbose:
-            print '    >>> Deltas:'
+            print('    >>> Deltas:')
             if len(pkg.patches) == 0:
-                print '        None\n'
+                print('        None\n')
             else:
                 for patch in pkg.patches:
-                    print '        %s' % '\n            -> '.join(
-                        [i.delta.fname for i in patch.dbrecords])
+                    print('        %s' % '\n            -> '.join(
+                        [i.delta.fname for i in patch.dbrecords]))
         if len(pkg.patches) == 0:
             continue
         if args.verbose:
-            print '    >>> Fetching deltas:'
+            print('    >>> Fetching deltas:')
         for patch in pkg.patches:
             patch.fetch_deltas(args.root_url, args.input_dir)
         if args.verbose:
-            print '    >>> Reconstructing distfiles:'
+            print('    >>> Reconstructing distfiles:')
         for patch in pkg.patches:
             if args.verbose:
                 sys.stdout.write('        %s ... ' % '\n            -> '.join(
@@ -106,17 +106,17 @@ def main():
             try:
                 patch.reconstruct(args.input_dir, args.output_dir,
                                   not args.no_compress)
-            except PatchException, err:
+            except PatchException as err:
                 if args.verbose:
-                    print 'failed!'
-                    print '            %s' % str(err)
+                    print('failed!')
+                    print('            %s' % str(err))
             else:
                 if args.verbose:
-                    print 'done!'
-                    print '            %s' % \
-                          os.path.basename(patch.dest.fname)
+                    print('done!')
+                    print('            %s' % \
+                          os.path.basename(patch.dest.fname))
         if args.verbose:
-            print
+            print()
 
 if __name__ == '__main__':
     main()

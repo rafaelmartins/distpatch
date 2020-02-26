@@ -14,7 +14,7 @@ import portage
 import posixpath
 import re
 
-from itertools import izip
+
 from portage.package.ebuild.fetch import fetch
 from shutil import move
 from subprocess import call
@@ -96,7 +96,7 @@ class Patch(object):
         if self.src != DeltaDBFile(src):
             raise PatchException('Bad checksum for source: %s' % \
                                  self.src.fname)
-        for delta, delta_record in izip(deltas, self.dbrecords):
+        for delta, delta_record in zip(deltas, self.dbrecords):
             if delta_record.delta != DeltaDBFile(delta):
                 raise PatchException('Bad checksum for delta: %s' % \
                                      delta_record.delta.fname)

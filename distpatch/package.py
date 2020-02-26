@@ -35,17 +35,17 @@ class Package(object):
         diffs = []
         taken = {}
         for ebuild_id in range(len(self.ebuilds) - 1):
-            cpvs = self.ebuilds.keys()
+            cpvs = list(self.ebuilds.keys())
             src_cpv = cpvs[ebuild_id]
             dest_cpv = cpvs[ebuild_id + 1]
             src_ebuild = self.ebuilds[src_cpv]
             dest_ebuild = self.ebuilds[dest_cpv]
-            for src_distfile in src_ebuild.src_uri_map.keys():
+            for src_distfile in list(src_ebuild.src_uri_map.keys()):
                 avg_distfile = None
                 avg_ebuild = None
                 max_avg = 0.0
                 avgs = {}
-                for dest_distfile in dest_ebuild.src_uri_map.keys():
+                for dest_distfile in list(dest_ebuild.src_uri_map.keys()):
                     prefix = ''
                     suffix = ''
                     for i in range(min(len(src_distfile), len(dest_distfile))):

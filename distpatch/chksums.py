@@ -26,16 +26,16 @@ class ChksumValue(object):
         self._handler = get_handler(algorithm)
 
     def to_str(self):
-        if isinstance(self.value, basestring):
+        if isinstance(self.value, str):
             return self.value
-        elif isinstance(self.value, long):
+        elif isinstance(self.value, int):
             return self._handler.long2str(self.value)
         raise ChksumException('Invalid value: %s' % self.value)
 
     def to_long(self):
-        if isinstance(self.value, long):
+        if isinstance(self.value, int):
             return self.value
-        elif isinstance(self.value, basestring):
+        elif isinstance(self.value, str):
             return self._handler.str2long(self.value)
         raise ChksumException('Invalid value: %s' % self.value)
 
@@ -69,11 +69,11 @@ class Chksum(object):
                 raise ChksumException('File not found: %s' % fname)
 
             values = get_chksums(fname, *self.algorithms)
-            chksums = zip(self.algorithms, values)
+            chksums = list(zip(self.algorithms, values))
 
         # if provided checksums, use them
         else:
-            chksums = chksums.items()
+            chksums = list(chksums.items())
 
         # validate checksums, and set attributes
         tmp_algorithms = list(self.algorithms)

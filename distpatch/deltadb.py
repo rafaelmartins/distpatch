@@ -40,7 +40,7 @@ import os
 
 from collections import OrderedDict
 from fcntl import lockf, LOCK_EX, LOCK_UN
-from itertools import izip
+
 from shutil import rmtree
 from snakeoil.chksum import get_handler
 from snakeoil.fileutils import AtomicWriteFile
@@ -171,7 +171,7 @@ class DeltaDB(list):
         pieces = line.split()
         chksums = OrderedDict()
         uchksums = OrderedDict()
-        for key, value in izip(pieces[::2], pieces[1::2]):
+        for key, value in zip(pieces[::2], pieces[1::2]):
             key = key.lower()[:]
             mykey = key[0] == 'u' and key[1:] or key
             myvalue = get_handler(mykey).str2long(value.strip())
